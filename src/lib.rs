@@ -23,6 +23,7 @@ fn textfile_to_int_vector(file_path: String) -> Result<Vec<u32>, Box<dyn Error>>
     Ok(all_data)
 }
 
+#[derive(Clone)]
 struct Vmatrix<T>
 where
     T: Number,
@@ -30,6 +31,8 @@ where
     size: usize,
     data: Vec<T>,
 }
+
+
 
 impl<T> Vmatrix<T> 
 where
@@ -53,6 +56,10 @@ where
             data: Vec::new(),
             size,
         }
+    }
+
+    fn write_to_file(&self) {
+
     }
 }
 
@@ -150,15 +157,23 @@ fn decorner_once(input_data: &Vmatrix<u32>, two_points_in_row: &mut bool) -> Vma
     result
 }
 
-fn get_accumulation(input_data: &Vmatrix<u32>, write_out: Option<bool>) -> Vmatrix<u32> {
+fn get_accumulation(input_data: Vmatrix<u32>, write_out: Option<bool>) -> Vmatrix<u32> {
+    let mut working_data = input_data.clone();
+
     let writing_out: bool = write_out.unwrap_or(false);
 
     let mut reductions: u32 = 1;
     let mut process: bool = true;
-    let accumulativeData: Vec::<Vmatrix<u32>>;
+    let mut accumulativeData: Vec::<Vmatrix<u32>> = Vec::new();
 
     while process && reductions < MAXIMUM_REDUCTIONS_DECORNERING {
-        let new_data: Vmatrix<u32> = decorner_once(&input_data, &mut process);
+        let new_data: Vmatrix<u32> = decorner_once(&working_data, &mut process);
+
+        accumulativeData.push(new_data.clone());
+
+        working_data = new_data;
+
+        reductions += 1;
     };
 
     Vmatrix::<u32>::new(0)
@@ -166,13 +181,16 @@ fn get_accumulation(input_data: &Vmatrix<u32>, write_out: Option<bool>) -> Vmatr
 
 // --- //
 
+const SAMPLE_INPUT_PATH: &str = "samplekanji.txt";
+const SAMPLE_OUTPUT_CLEAR: &str = "sampleoutput.txt";
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn can_get_sample_data() {
-        let file_content = fs::read_to_string("samplekanji.txt");
+        let file_content = fs::read_to_string(SAMPLE_INPUT_PATH.to_string());
         for content in file_content {
             println!("{}", content);
         }
@@ -180,7 +198,7 @@ mod tests {
 
     #[test]
     fn can_get_input_from_sample() {
-        match textfile_to_int_vector(String::from("samplekanji.txt")) {
+        match textfile_to_int_vector(SAMPLE_INPUT_PATH.to_string()) {
             Ok(all_data) => assert_eq!(all_data.len(), 64 * 64),
             Err(error) => panic!("Input data couldn't be retrieved: {}", error),
         }
@@ -190,7 +208,7 @@ mod tests {
     fn can_generate_sample_struct() {
         let sample_size = 64;
 
-        let sample_data: Vmatrix<u32> = textfile_to_vmatrix(String::from("samplekanji.txt"), sample_size);
+        let sample_data: Vmatrix<u32> = textfile_to_vmatrix(SAMPLE_INPUT_PATH.to_string(), sample_size);
         assert_eq!(sample_data.size, sample_size);
         assert_eq!(sample_data.data.len(), sample_size * sample_size);
     }
@@ -220,5 +238,19 @@ mod tests {
         data_sample.data = sample_data_5;
         set_bound_rows_to_zero(&mut data_sample);
         assert_eq!(data_sample.data, sample_comp_5); 
+    }
+
+    #[test]
+    fn can_write_back_into_file() {
+        let sample_size = 64;
+
+        let mut complete_message: String = String::from("");
+        for i in 0..sample_size {
+            for j in 0..sample_size {
+                complete_message += &String::from("1");
+            }    
+            complete_message += &String::from("\n");
+        }
+        fs::write(SAMPLE_OUTPUT_CLEAR, complete_message);
     }
 }
