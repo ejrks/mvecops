@@ -15,7 +15,7 @@ where
 
 impl<T> Vmatrix<T> 
 where
-    T: Clone,
+    T: Clone + Copy,
 {
     /// Create an empty instance of Vmatrix
     pub fn new(size: usize) -> Vmatrix<T> {
@@ -52,6 +52,18 @@ where
         }
 
         new_instance
+    }
+
+    /// Rearrange the data so columns are read as files.
+    pub fn transpose(&mut self) {
+        let data_copy = self.data.clone();
+        let size = self.size;
+
+        for i in 0..size {
+            for j in 0..size {
+                self.data[i + j * self.size] = data_copy[j + i * size];
+            }
+        }
     }
 }
 

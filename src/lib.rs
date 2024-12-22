@@ -8,6 +8,8 @@ pub mod def;
 pub mod naudr;
 use def::vmatrix::*;
 use naudr::accumulate::*;
+use naudr::recurrent::*;
+use naudr::operate::*;
 
 // Send to general, too generic
 fn textfile_to_int_vector(file_path: String) -> Result<Vec<u32>, Box<dyn Error>> {
@@ -39,6 +41,8 @@ const SAMPLE_INPUT_PATH: &str = "samplekanji.txt";
 const SAMPLE_OUTPUT_CLEAR: &str = "sampleoutput.txt";
 const SAMPLE_OUTPUT_RED: &str = "reduction#";
 const SAMPLE_OUTPUT_ACC: &str = "accumulations.txt";
+const SAMPLE_OUTPUT_DOMVE: &str = "dominantVE.txt";
+const SAMPLE_OUTPUT_DOMHR: &str = "dominantHR.txt";
 
 #[cfg(test)]
 mod tests {
@@ -120,5 +124,68 @@ mod tests {
 
         let accumulations: Vmatrix<u32> = get_accumulation(input_data, &output_path);
         accumulations.write_to_file(SAMPLE_OUTPUT_ACC.to_string());
+    }
+
+    #[test]
+    fn transpose_data() {
+        let sample_data_5 = vec![1, 0, 1, 0, 1,
+                                 1, 0, 1, 1, 0, 
+                                 1, 1, 0, 0, 1, 
+                                 1, 1, 0, 1, 1, 
+                                 1, 0, 0, 0, 1];
+
+        let sample_comp_5 = vec![1, 1, 1, 1, 1,
+                                 0, 0, 1, 1, 0, 
+                                 1, 1, 0, 0, 0, 
+                                 0, 1, 0, 1, 0, 
+                                 1, 0, 1, 1, 1];
+
+        let mut data_sample = Vmatrix {
+            size: 5,
+            data: sample_data_5,
+        };
+
+        data_sample.transpose();
+
+        assert_eq!(data_sample.data, sample_comp_5);
+    }
+
+    #[test]
+    fn dominant_directions() {
+        let sample_size: usize = 64;
+
+        let mut input_data: Vmatrix<u32> = textfile_to_vmatrix(SAMPLE_INPUT_PATH.to_string(), sample_size);
+
+        let dominant_vertical: Vmatrix<u32> = recurrent_trace(&input_data, 12);
+        dominant_vertical.write_to_file(SAMPLE_OUTPUT_DOMVE.to_string());
+
+        input_data.transpose();
+
+        let dominant_horizontal: Vmatrix<u32> = recurrent_trace(&input_data, 12);
+        dominant_horizontal.write_to_file(SAMPLE_OUTPUT_DOMHR.to_string());         
+    }
+
+    #[test]
+    #[should_panic]
+    fn vmatrix_xor_different_size() {
+        let sample_data_4 = vec![1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1];
+        let sample_data_5 = vec![1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1];
+
+        let mut data_sample_1 = Vmatrix {
+            size: 4,
+            data: sample_data_4,
+        };
+
+        let mut data_sample_2 = Vmatrix {
+            size: 5,
+            data: sample_data_5,
+        };
+
+        data_sample_1.xor(data_sample_2);
+    }
+
+    #[test]
+    fn vmatrix_xor() {
+        
     }
 }
