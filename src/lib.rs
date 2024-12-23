@@ -7,9 +7,14 @@ use std::fs;
 pub mod def;
 pub mod naudr;
 use def::vmatrix::*;
+use def::trigonometric::*;
 use naudr::accumulate::*;
 use naudr::recurrent::*;
 use naudr::operate::*;
+use naudr::closed_curves::*;
+
+// Remove usage of naudr without qualifying the name, common operations are being used and might
+// overlap user api
 
 // GENERIC //
 fn textfile_to_int_vector(file_path: String) -> Result<Vec<u32>, Box<dyn Error>> {
@@ -283,5 +288,67 @@ mod tests {
         substraction_result.transpose();
 
         substraction_result.write_to_file(SAMPLE_OUTPUT_SUBST.to_string());
+    }
+
+    #[test]
+    fn trigonometrics_from_ints() {
+        let cos_enum = Trigonometric::from_int(0);
+        let neg_sin_enum = Trigonometric::from_int(1);
+        let neg_cos_enum = Trigonometric::from_int(2);
+        let sin_enum = Trigonometric::from_int(3);
+
+        assert_eq!(cos_enum, Trigonometric::COS);
+        assert_eq!(neg_sin_enum, Trigonometric::NSIN);
+        assert_eq!(neg_cos_enum, Trigonometric::NCOS);
+        assert_eq!(sin_enum, Trigonometric::SIN);
+    }
+
+    #[test]
+    #[should_panic]
+    fn panic_on_unknown_trigonometric() {
+        let failing_enum = Trigonometric::from_int(99);
+    }
+
+    #[test]
+    fn trigonometrics_derivations() {
+        let mut direction = Trigonometric::from_int(0);
+
+        direction = Trigonometric::derivative(direction);
+        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        assert_eq!(direction, Trigonometric::NSIN);
+        direction = Trigonometric::derivative(direction);
+        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        assert_eq!(direction, Trigonometric::NCOS);
+        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        direction = Trigonometric::derivative(direction);
+        assert_eq!(direction, Trigonometric::SIN);
+        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        direction = Trigonometric::derivative(direction);
+        assert_eq!(direction, Trigonometric::COS);
+
+        direction = Trigonometric::antiderivative(direction);
+        assert_eq!(direction, Trigonometric::SIN);
+        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        direction = Trigonometric::antiderivative(direction);
+        assert_eq!(direction, Trigonometric::NCOS);
+        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        direction = Trigonometric::antiderivative(direction);
+        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        assert_eq!(direction, Trigonometric::NSIN);
+        direction = Trigonometric::antiderivative(direction);
+        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        assert_eq!(direction, Trigonometric::COS);        
+    }
+  
+    #[test]
+    fn call_external() {
+        let sample_size: usize = 64;
+        let mut global_curve_data = GlobalCurveData::new(64);
+        global_curve_data.transpose_internal();
+
+        // THIS IS A DEBUG MISSUSE, don't do it like this, it's just to have sample data //
+        let accumulations: Vmatrix<u32> = get_accumulations_from(SAMPLE_INPUT_PATH.to_string(), sample_size);
+        get_curves(&mut global_curve_data, &accumulations);
+        // DELETE UP //
     }
 }
