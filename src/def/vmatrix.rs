@@ -102,6 +102,16 @@ where
         new_instance.transpose();
         new_instance
     }
+
+    /// Check whether a given value is a valid index for data
+    ///
+    pub fn test_index(&self, input: usize) -> bool {
+        if input >= self.data.len() {
+            return false
+        }
+
+        return true
+    }
 }
 
 impl<T> Vmatrix<T> 

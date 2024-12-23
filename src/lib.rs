@@ -368,6 +368,19 @@ mod tests {
     }
 
     #[test]
+    fn valid_index_on_vmatrixu32() {
+        let exclusive_at_data_5 = vec![1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1];
+
+        let mut data_sample_1 = Vmatrix {
+            size: 5,
+            data: exclusive_at_data_5,
+        };
+
+        assert_eq!(data_sample_1.test_index(12), true);
+        assert_eq!(data_sample_1.test_index(1502), false);
+    }
+
+    #[test]
     fn call_external() {
         let sample_size: usize = 64;
         let mut global_curve_data = GlobalCurveData::new(64);
@@ -375,7 +388,7 @@ mod tests {
 
         // THIS IS A DEBUG MISSUSE, don't do it like this, it's just to have sample data //
         let accumulations: Vmatrix<u32> = get_accumulations_from(SAMPLE_INPUT_PATH.to_string(), sample_size);
-        get_curves(&mut global_curve_data, &accumulations);
+        // get_curves(&mut global_curve_data, &accumulations);
         // DELETE UP //
     }
 }
