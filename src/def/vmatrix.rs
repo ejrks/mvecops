@@ -18,6 +18,7 @@ where
     T: Clone + Copy,
 {
     /// Create an empty instance of Vmatrix
+    ///
     pub fn new(size: usize) -> Vmatrix<T> {
         Vmatrix {
             data: Vec::new(),
@@ -26,6 +27,7 @@ where
     }
 
     /// Create a new Vmatrix with a starting value
+    ///
     pub fn initialize(size: usize, initial_value: T) -> Vmatrix<T> {
         let mut new_instance = Vmatrix {
             data: Vec::new(),
@@ -41,6 +43,7 @@ where
     }
 
     /// Build a new Vmatrix using data from an existing standard vector
+    ///
     pub fn build(size: usize, new_data: Vec<T>) -> Vmatrix<T> {
         let mut new_instance = Vmatrix {
             data: Vec::new(),
@@ -55,6 +58,7 @@ where
     }
 
     /// Rearrange the data so columns are read as files.
+    ///
     pub fn transpose(&mut self) {
         let data_copy = self.data.clone();
         let size = self.size;
@@ -64,6 +68,39 @@ where
                 self.data[i + j * self.size] = data_copy[j + i * size];
             }
         }
+    }
+
+    /// Get a clone of Vmatrix
+    ///
+    pub fn normal_copy(&self) -> Vmatrix<T> {
+        let mut new_instance: Vmatrix<T> = Vmatrix {
+            data: Vec::new(),
+            size: self.size,
+        };
+
+        let working_reference = &self.data;
+        for entry in working_reference {
+             new_instance.data.push(entry.clone());
+        }
+        
+        new_instance
+    }
+
+    /// Get a new Vmatrix transposed from the input
+    ///
+    pub fn transposed_copy(&self) -> Vmatrix<T> {
+        let mut new_instance: Vmatrix<T> = Vmatrix {
+            data: Vec::new(),
+            size: self.size,
+        };
+
+        let working_reference = &self.data;
+        for entry in working_reference {
+             new_instance.data.push(entry.clone());
+        }
+        
+        new_instance.transpose();
+        new_instance
     }
 }
 

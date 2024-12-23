@@ -5,14 +5,14 @@ where
     T: Clone + std::cmp::PartialEq<u32>,
 {
     // Could be refactored to take closures and thus operate over any criterion, instead of just numbers
-    /// Return a new Vmatrix that has 1 on the same entries where self had a number different from zero
-    /// but other did NOT have an entry different from zero
+    /// Return a new Vmatrix that has 1 on the same entries where -self- had a number different from zero
+    /// but -other- did NOT have an entry different from zero
     /// 
-    /// #Panics
+    /// # Panics
     ///
     /// The function panics if the inputs have different data length
     ///
-    pub fn xor(&self, other: Vmatrix<u32>) -> Vmatrix<u32> {
+    pub fn xat(&self, other: Vmatrix<u32>) -> Vmatrix<u32> {
         let set_length_1: usize = self.data.len();
         let set_length_2: usize = other.data.len();
 
