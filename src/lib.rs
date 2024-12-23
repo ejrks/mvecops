@@ -313,33 +313,60 @@ mod tests {
     fn trigonometrics_derivations() {
         let mut direction = Trigonometric::from_int(0);
 
-        direction = Trigonometric::derivative(direction);
-        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        direction = Trigonometric::derivative(&direction);
+        direction = Trigonometric::derivative(&Trigonometric::antiderivative(&direction));
         assert_eq!(direction, Trigonometric::NSIN);
-        direction = Trigonometric::derivative(direction);
-        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        direction = Trigonometric::derivative(&direction);
+        direction = Trigonometric::derivative(&Trigonometric::antiderivative(&direction));
         assert_eq!(direction, Trigonometric::NCOS);
-        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
-        direction = Trigonometric::derivative(direction);
+        direction = Trigonometric::derivative(&Trigonometric::antiderivative(&direction));
+        direction = Trigonometric::derivative(&direction);
         assert_eq!(direction, Trigonometric::SIN);
-        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
-        direction = Trigonometric::derivative(direction);
+        direction = Trigonometric::derivative(&Trigonometric::antiderivative(&direction));
+        direction = Trigonometric::derivative(&direction);
         assert_eq!(direction, Trigonometric::COS);
 
-        direction = Trigonometric::antiderivative(direction);
+        direction = Trigonometric::antiderivative(&direction);
         assert_eq!(direction, Trigonometric::SIN);
-        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
-        direction = Trigonometric::antiderivative(direction);
+        direction = Trigonometric::derivative(&Trigonometric::antiderivative(&direction));
+        direction = Trigonometric::antiderivative(&direction);
         assert_eq!(direction, Trigonometric::NCOS);
-        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
-        direction = Trigonometric::antiderivative(direction);
-        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        direction = Trigonometric::derivative(&Trigonometric::antiderivative(&direction));
+        direction = Trigonometric::antiderivative(&direction);
+        direction = Trigonometric::derivative(&Trigonometric::antiderivative(&direction));
         assert_eq!(direction, Trigonometric::NSIN);
-        direction = Trigonometric::antiderivative(direction);
-        direction = Trigonometric::derivative(Trigonometric::antiderivative(direction));
+        direction = Trigonometric::antiderivative(&direction);
+        direction = Trigonometric::derivative(&Trigonometric::antiderivative(&direction));
         assert_eq!(direction, Trigonometric::COS);        
     }
   
+    #[test]
+    fn get_index_with_trigonometrics() {
+        let starting_index: usize = 1502;
+        let row_size: usize = 64;
+        let mut result_index: usize = 0;
+
+        result_index = Trigonometric::get_index_from_direction(starting_index, row_size, &Trigonometric::COS, 0);
+        assert_eq!(result_index, 1503);
+        result_index = Trigonometric::get_index_from_direction(starting_index, row_size, &Trigonometric::NCOS, 0);
+        assert_eq!(result_index, 1501);
+
+        result_index = Trigonometric::get_index_from_direction(starting_index, row_size, &Trigonometric::SIN, 0);
+        assert_eq!(result_index, 1438);
+        result_index = Trigonometric::get_index_from_direction(starting_index, row_size, &Trigonometric::NSIN, 0);
+        assert_eq!(result_index, 1566);
+
+        result_index = Trigonometric::get_index_from_direction(starting_index, row_size, &Trigonometric::COS, 1);
+        assert_eq!(result_index, 1439);
+        result_index = Trigonometric::get_index_from_direction(starting_index, row_size, &Trigonometric::NCOS, -1);
+        assert_eq!(result_index, 1437);
+
+        result_index = Trigonometric::get_index_from_direction(starting_index, row_size, &Trigonometric::SIN, -1);
+        assert_eq!(result_index, 1439);
+        result_index = Trigonometric::get_index_from_direction(starting_index, row_size, &Trigonometric::NSIN, 1);
+        assert_eq!(result_index, 1567);
+    }
+
     #[test]
     fn call_external() {
         let sample_size: usize = 64;
