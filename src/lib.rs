@@ -58,10 +58,40 @@ fn write_out_sample_reductions() {
 /// that represent points where data is "found". The sample size is the number of elements per row
 /// to recreate the data internally as a matrix. Use "samplekanji.txt" as reference.
 /// 
-pub fn get_accumulations_from(target_file: String, sample_size: usize) -> Vmatrix<u32> {
+pub fn get_accumulations_from_file(target_file: String, sample_size: usize) -> Vmatrix<u32> {
     let input_data: Vmatrix<u32> = textfile_to_vmatrix(target_file, sample_size);
     let output_path = None;
     get_accumulation(input_data, &output_path)
+}
+
+/// See [get_accumulations_from_file]. This function is meant to be used with data directly, instead
+/// of loading it through a file.
+///
+pub fn get_accumulations_from_data(input_data: Vmatrix<u32>, sample_size: usize) -> Vmatrix<u32> {
+    let output_path = None;
+    get_accumulation(input_data, &output_path)
+}
+
+/// Get all the curves found in a set of data. A set of curves within a vector that is being treated
+/// as a matrix is any body of data found in a curve closed from the rest of the data and that is not
+/// made by completely vertical traces (a continuous column of filled data) or completely horizontal
+/// data (a continuous row of filled data). This allows to find these straight lines, that can be
+/// described trivially within a dataset, and separate them from any "non-elemental" line, that has a
+/// heavier process to find a description.
+///
+pub fn get_substractions_from_data(accumulations: Vmatrix<u32>, sample_size: usize, dominants_recurrency: usize) -> Vmatrix<u32> {
+    let accumulations_transposed = accumulations.transposed_copy();
+
+    let vertical_dominant = recurrent_trace(&accumulations, dominants_recurrency);
+    let horizont_dominant = recurrent_trace(&accumulations_transposed, dominants_recurrency);
+
+    let mut substraction_result: Vmatrix<u32> = accumulations.normal_copy();
+    substraction_result = substraction_result.xat(vertical_dominant);
+    substraction_result.transpose();
+    substraction_result = substraction_result.xat(horizont_dominant);
+    substraction_result.transpose();
+
+    return substraction_result;
 }
 
 // --- //
@@ -146,7 +176,7 @@ mod tests {
 
     #[test]
     fn write_out_sample_reductions() {
-        let accumulations: Vmatrix<u32> = get_accumulations_from(SAMPLE_INPUT_PATH.to_string(), 64);
+        let accumulations: Vmatrix<u32> = get_accumulations_from_file(SAMPLE_INPUT_PATH.to_string(), 64);
         accumulations.write_to_file(SAMPLE_OUTPUT_ACC.to_string());
     }
 
@@ -275,17 +305,8 @@ mod tests {
         let sample_size: usize = 64;
         let dominants_recurrency: usize = 12;
 
-        let accumulations: Vmatrix<u32> = get_accumulations_from(SAMPLE_INPUT_PATH.to_string(), sample_size);
-        let accumulations_transposed = accumulations.transposed_copy();
-
-        let vertical_dominant = recurrent_trace(&accumulations, dominants_recurrency);
-        let horizont_dominant = recurrent_trace(&accumulations_transposed, dominants_recurrency);
-
-        let mut substraction_result: Vmatrix<u32> = accumulations.normal_copy();
-        substraction_result = substraction_result.xat(vertical_dominant);
-        substraction_result.transpose();
-        substraction_result = substraction_result.xat(horizont_dominant);
-        substraction_result.transpose();
+        let accumulations: Vmatrix<u32> = get_accumulations_from_file(SAMPLE_INPUT_PATH.to_string(), sample_size);
+        let mut substraction_result = get_substractions_from_data(accumulations, sample_size, dominants_recurrency);
 
         substraction_result.write_to_file(SAMPLE_OUTPUT_SUBST.to_string());
     }
@@ -387,7 +408,7 @@ mod tests {
         global_curve_data.transpose_internal();
 
         // THIS IS A DEBUG MISSUSE, don't do it like this, it's just to have sample data //
-        let accumulations: Vmatrix<u32> = get_accumulations_from(SAMPLE_INPUT_PATH.to_string(), sample_size);
+        let accumulations: Vmatrix<u32> = get_accumulations_from_file(SAMPLE_INPUT_PATH.to_string(), sample_size);
         // get_curves(&mut global_curve_data, &accumulations);
         // DELETE UP //
     }
