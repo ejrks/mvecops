@@ -103,6 +103,7 @@ const SAMPLE_OUTPUT_ACC: &str = "accumulations.txt";
 const SAMPLE_OUTPUT_DOMVE: &str = "dominantVE.txt";
 const SAMPLE_OUTPUT_DOMHR: &str = "dominantHR.txt";
 const SAMPLE_OUTPUT_SUBST: &str = "substraction.txt";
+const SAMPLE_OUTPUT_INFLX: &str = "inflexion.txt";
 
 #[cfg(test)]
 mod tests {
@@ -402,14 +403,17 @@ mod tests {
     }
 
     #[test]
-    fn call_external() {
+    fn get_inflexion_curves() {
         let sample_size: usize = 64;
+        let dominants_recurrency = 12;
+
         let mut global_curve_data = GlobalCurveData::new(64);
         global_curve_data.transpose_internal();
 
-        // THIS IS A DEBUG MISSUSE, don't do it like this, it's just to have sample data //
         let accumulations: Vmatrix<u32> = get_accumulations_from_file(SAMPLE_INPUT_PATH.to_string(), sample_size);
-        // get_curves(&mut global_curve_data, &accumulations);
-        // DELETE UP //
+        let mut subtractions = get_substractions_from_data(accumulations, sample_size, dominants_recurrency);
+
+        let inflexion_curves = get_curves(&mut global_curve_data, &subtractions);
+        inflexion_curves.write_to_file(SAMPLE_OUTPUT_INFLX.to_string());
     }
 }

@@ -60,11 +60,15 @@ pub fn get_curves(global_data: &mut GlobalCurveData, input_data: &Vmatrix<u32>) 
 
     let working_input = &input_data.data;
 
+    // Draw all the curves
+    let mut curve_count = 0;
+
     for i in 0..set_length {
         if working_input[i] == 1 && result_set.data[i] == 0 {
             result_set.data[i] = 2;
             draw_curve_on(&input_data, &mut result_set, &global_data, i);
             hollow_set(2, 1, global_data.row_size, &input_data, &mut result_set);
+            curve_count += 1;
         } 
     }
 
@@ -74,7 +78,8 @@ pub fn get_curves(global_data: &mut GlobalCurveData, input_data: &Vmatrix<u32>) 
 /// Mark values that have been processed already two prevent drawing the curves out of them on loop
 ///
 fn hollow_set(anchor_value: u32, hollow_value: u32, row_size: usize, input_data: &Vmatrix<u32>, result_set: &mut Vmatrix<u32>) {
-    let set_size = result_set.size;
+    let set_size = result_set.data.len();
+    println!("Size of the set {}", set_size);
 
     let mut row_count = 0;
     let mut anchor_enabled: bool = false;
@@ -83,7 +88,7 @@ fn hollow_set(anchor_value: u32, hollow_value: u32, row_size: usize, input_data:
     let working_result = &mut result_set.data;
 
     for i in 0..set_size {
-        if anchor_enabled && working_input[i] != 0 && working_result[i] != anchor_value {
+        if anchor_enabled && (working_input[i] != 0) && (working_result[i] != anchor_value) {
             working_result[i] = hollow_value;
         }
         if anchor_enabled && working_input[i] == 0 {
@@ -177,6 +182,8 @@ pub fn draw_curve_on(input_data: &Vmatrix<u32>, result_output: &mut Vmatrix<u32>
 
         number_of_checks += 1;
         if number_of_checks >= maximum_checks {
+            result_output.data[index] = 6;
+            result_output.write_to_file(String::from("debug.txt"));
             panic!("The process gave up before checking all values. Is MAX_CHECKS_FACTOR too low? Index calling: {}", index)
         }
     }

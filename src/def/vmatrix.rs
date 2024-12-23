@@ -119,6 +119,7 @@ where
     T: ToString + Clone,
 {
     /// Write a whole Vmatrix to a file, inserting a new line after <size> number of characters were written
+    ///
     pub fn write_to_file(&self, file_path: String) {
         let mut complete_output: String = String::from("");
         let size = self.size;
@@ -130,5 +131,26 @@ where
             complete_output += &String::from("\n");
         }
         fs::write(file_path, complete_output);
+    }
+
+    /// See [write_to_file]. Use a standard composed name: <file_name>#<integer>.txt. Allows to easily print out
+    /// of loops several different matrices.
+    ///
+    pub fn write_to_file_stdname(&self, file_name: String, id: usize) {
+        let mut composed_name = file_name +
+                           &String::from("#") +
+                           &id.to_string() +
+                           &String::from(".txt");
+
+        let mut complete_output: String = String::from("");
+        let size = self.size;
+
+        for i in 0..size {
+            for j in 0..size {
+                complete_output += &self.data[j + i * size].to_string();
+            }    
+            complete_output += &String::from("\n");
+        }
+        fs::write(composed_name, complete_output);
     }
 }
