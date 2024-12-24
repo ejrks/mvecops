@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+// There is definetely a vector class on crates, don't clutter
+
 /// A struct to save a simple 2d vector
 ///
 pub struct Vector2<T> 
@@ -21,6 +23,15 @@ where
             x,
             y,
         }
+    }
+}
+
+/// Returns the sum of two integer vectors
+///
+pub fn sum_vectors(input1: &Vector2<i32>, input2: &Vector2<i32>) -> Vector2<i32> {
+    Vector2 {
+            x: input1.x + input2.x,
+            y: input1.y + input2.y,
     }
 }
 
@@ -93,6 +104,21 @@ pub fn column_distance(from: i32, to: i32, row_size: usize) -> i32 {
     return x2 - x1; 
 }
 
+/// Return an index as a displacement vector starting at the beginning of the vector
+///
+pub fn get_index_as_coordinates(input: usize, row_size: usize) -> Vector2<i32> {
+    let internal_input = input as i32;
+    let internal_rs = row_size as i32;
+
+    let x = internal_input % internal_rs;
+    let y = internal_input / internal_rs;
+
+    Vector2 {
+        x,
+        y,
+    }
+}
+
 /// Check if a test value is "close enough" to another.
 ///
 /// # Non-inclusive
@@ -128,4 +154,16 @@ pub fn orthogonal_from_antiparallel(input1: &Vector2<i32>, input2: &Vector2<i32>
 
     orthogonal2.x = input1.y;
     orthogonal2.y = input2.x;
+}
+
+/// Move an index by a vector displacement on the data
+///
+pub fn array_position_vector_displacement(input_index: usize, row_size: usize, direction: Vector2<i32>) -> i32 {
+    let internal_rs = row_size as i32;
+
+    let mut new_position: Vector2<i32> = get_index_as_coordinates(input_index, row_size);
+    new_position = sum_vectors(&new_position, &direction);
+
+    let result = new_position.x + internal_rs * new_position.y;
+    return result;
 }

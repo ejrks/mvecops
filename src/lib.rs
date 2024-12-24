@@ -535,4 +535,52 @@ mod tests {
         assert_eq!(close_enough(-0.1, 0.0, 0.15), true);
         assert_eq!(close_enough(-0.1, 0.1, -0.21), true);
     }
+
+    #[test]
+    fn index_to_coordinates() {
+        let row_size = 64;
+        
+        let mut result = get_index_as_coordinates(0, row_size);
+        assert_eq!((result.x, result.y), (0, 0));
+        let mut result = get_index_as_coordinates(3243, row_size);
+        assert_eq!((result.x, result.y), (43, 50));
+        let mut result = get_index_as_coordinates(501, row_size);
+        assert_eq!((result.x, result.y), (53, 7));
+        let mut result = get_index_as_coordinates(4095, row_size);
+        assert_eq!((result.x, result.y), (63, 63));
+    }
+
+    #[test]
+    fn sum_of_vectors() {
+        let mut input1: Vector2<i32> = Vector2::new(1, 3);
+        let mut input2: Vector2<i32> = Vector2::new(-2, -3);
+        let mut result = sum_vectors(&input1, &input2);
+        assert_eq!((result.x, result.y), (-1, 0));
+
+        let mut input1: Vector2<i32> = Vector2::new(0, 0);
+        let mut input2: Vector2<i32> = Vector2::new(-2, -3);
+        let mut result = sum_vectors(&input1, &input2);
+        assert_eq!((result.x, result.y), (-2, -3));
+
+        let mut input1: Vector2<i32> = Vector2::new(1, 3);
+        let mut input2: Vector2<i32> = Vector2::new(99, 77);
+        let mut result = sum_vectors(&input1, &input2);
+        assert_eq!((result.x, result.y), (100, 80));
+
+        let mut input1: Vector2<i32> = Vector2::new(-1, -1);
+        let mut input2: Vector2<i32> = Vector2::new(-8, -8);
+        let mut result = sum_vectors(&input1, &input2);
+        assert_eq!((result.x, result.y), (-9, -9));
+    }
+
+    #[test]
+    fn displace_index_with_vectors() {
+        let row_size = 64; 
+ 
+        let mut input: usize = 0;
+        let mut direction: Vector2<i32> = Vector2::new(10, 0);
+        
+        let mut result = array_position_vector_displacement(input, row_size, direction);
+        assert_eq!(result, 10);
+    }
 }
