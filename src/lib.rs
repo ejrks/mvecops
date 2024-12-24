@@ -8,6 +8,7 @@ pub mod def;
 pub mod naudr;
 use def::vmatrix::*;
 use def::trigonometric::*;
+use def::maths::*;
 use naudr::accumulate::*;
 use naudr::recurrent::*;
 use naudr::operate::*;
@@ -327,7 +328,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn panic_on_unknown_trigonometric() {
+    fn on_unknown_trigonometric() {
         let failing_enum = Trigonometric::from_int(99);
     }
 
@@ -415,5 +416,50 @@ mod tests {
 
         let inflexion_curves = get_curves(&mut global_curve_data, &subtractions);
         inflexion_curves.write_to_file(SAMPLE_OUTPUT_INFLX.to_string());
+    }
+
+    #[test]
+    fn compute_index_distances() {
+        let mut assertion = false;
+        let mut result: f32 = 0.0;
+
+        let error_margin = 0.01;
+         
+        result = get_index_distance(5,5,5);
+        assert_eq!(close_enough(result, 0.0, error_margin), true);
+
+        result = get_index_distance(1741, 2226, 64);
+        assert_eq!(close_enough(result, 37.65, error_margin), true);  
+        result = get_index_distance(2226, 1741, 64);
+        assert_eq!(close_enough(result, 37.65, error_margin), true);  
+
+        result = get_index_distance(0, 4095, 64);
+        assert_eq!(close_enough(result, 89.09, error_margin), true);
+        result = get_index_distance(4095, 0, 64);
+        assert_eq!(close_enough(result, 89.09, error_margin), true);  
+
+        result = get_index_distance(3990, 178, 64);
+        assert_eq!(close_enough(result, 66.21, error_margin), true);  
+        result = get_index_distance(178, 3990, 64);
+        assert_eq!(close_enough(result, 66.21, error_margin), true); 
+
+        result = get_index_distance(2519, 2524, 64);
+        assert_eq!(close_enough(result, 5.0, error_margin), true);  
+        result = get_index_distance(2524, 2519, 64);
+        assert_eq!(close_enough(result, 5.0, error_margin), true); 
+
+        result = get_index_distance(3962, 4026, 64);
+        assert_eq!(close_enough(result, 1.0, error_margin), true);  
+        result = get_index_distance(4026, 3962, 64);
+        assert_eq!(close_enough(result, 1.0, error_margin), true); 
+    }
+
+    #[test]
+    fn close_enough_checks() {
+        assert_eq!(close_enough(0.0, 0.0, 0.0), true);
+        assert_eq!(close_enough(0.1, 0.0, 0.0), false);
+        assert_eq!(close_enough(0.1, 0.0, 0.1), false);
+        assert_eq!(close_enough(-0.1, 0.0, 0.15), true);
+        assert_eq!(close_enough(-0.1, 0.1, -0.21), true);
     }
 }
