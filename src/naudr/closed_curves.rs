@@ -1,13 +1,17 @@
 use crate::Vmatrix;
 use crate::Trigonometric;
+use crate::Vector2;
+
 use crate::get_index_distance;
+use crate::get_middle_point;
+
 use crate::row_distance;
 
 use std::vec::Vec;
 
 /// If some curve is ignored, you can try to increase this value to make more checks before the
 /// process "gives up". Big numbers might throw it into a very consuming and long-lasting loop.
-/// For all working tests, the value for best compromise speed/accuracy was 8.
+/// For all working tests, the value for best compromise accuracy/safety was 8.
 ///
 /// # Testing
 ///
@@ -228,10 +232,31 @@ fn paint_on_direction(from_index: usize, row_size: usize, direction: &Trigonomet
     return new_index
 }
 
-fn get_smooth_curves(from_point: usize, to_point: usize, row_size: usize) {
-    let mut result_list: Vec<Vec<usize>> = vec![];
+fn get_smooth_curves(input_data: &Vmatrix<u32>, from_point: usize, to_point: usize, row_size: usize) -> Vec<usize> {
+    let mut result_list: Vec<usize> = vec![];
 
-    // let middle_point = 
+    let delta1: &mut Vector2<i32> = &mut Vector2::new(0, 0);
+    let delta2: &mut Vector2<i32> = &mut Vector2::new(0, 0);
+
+    let middle_point = get_middle_point(from_point as i32, to_point as i32, row_size, delta1, delta2);
+    if middle_point == from_point || middle_point == to_point {
+        return result_list;
+    }
+
+    let working_data = &input_data.data;
+
+    // backup was originally used here
+    if working_data[middle_point] == 1 {
+        result_list.push(middle_point);
+    }
+    else {
+        let orthogonal1: &mut Vector2<i32> = &mut Vector2::new(0, 0);
+        let orthogonal2: &mut Vector2<i32> = &mut Vector2::new(0, 0);
+
+        //
+    }
+
+    return result_list;
 }
 
 // Result set is using PREVIOUS CURVE DATA

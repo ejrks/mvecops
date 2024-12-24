@@ -491,6 +491,43 @@ mod tests {
     }
 
     #[test]
+    fn compute_orthogonal_vectors() {
+        let mut input1: Vector2<i32> = Vector2::new(2, 3);
+        let mut input2: Vector2<i32> = Vector2::new(-2, -3);
+        let orthogonal1: &mut Vector2<i32> = &mut Vector2::new(0, 0);
+        let orthogonal2: &mut Vector2<i32> = &mut Vector2::new(0, 0);
+
+        orthogonal_from_antiparallel(&input1, &input2, orthogonal1, orthogonal2);
+        assert_eq!((orthogonal1.x, orthogonal1.y), (-3, 2));
+        assert_eq!((orthogonal2.x, orthogonal2.y), (3, -2));
+
+        input1 = Vector2::new(0, 9);
+        input2 = Vector2::new(0, -9);
+
+        orthogonal_from_antiparallel(&input1, &input2, orthogonal1, orthogonal2);
+        assert_eq!((orthogonal1.x, orthogonal1.y), (-9, 0));
+        assert_eq!((orthogonal2.x, orthogonal2.y), (9, 0));
+
+        input1 = Vector2::new(1, -10);
+        input2 = Vector2::new(-1, 10);
+
+        orthogonal_from_antiparallel(&input1, &input2, orthogonal1, orthogonal2);
+        assert_eq!((orthogonal1.x, orthogonal1.y), (10, 1));
+        assert_eq!((orthogonal2.x, orthogonal2.y), (-10, -1));
+    }
+
+    #[test]
+    #[should_panic]
+    fn orthogonal_from_not_antiparallel() {
+        let input1: Vector2<i32> = Vector2::new(1, 3);
+        let input2: Vector2<i32> = Vector2::new(-2, -3);
+        let orthogonal1: &mut Vector2<i32> = &mut Vector2::new(0, 0);
+        let orthogonal2: &mut Vector2<i32> = &mut Vector2::new(0, 0);
+    
+        orthogonal_from_antiparallel(&input1, &input2, orthogonal1, orthogonal2);
+    }
+
+    #[test]
     fn close_enough_checks() {
         assert_eq!(close_enough(0.0, 0.0, 0.0), true);
         assert_eq!(close_enough(0.1, 0.0, 0.0), false);

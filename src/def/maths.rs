@@ -12,7 +12,7 @@ where
 
 impl<T> Vector2<T> 
 where
-    T: Debug,
+    T: Debug + Copy,
 {
     /// Create a new vector with the given values
     ///
@@ -113,4 +113,19 @@ pub fn close_enough(test_value: f32, close_to: f32, by_margin: f32) -> bool {
     let upper_margin = close_to + absolute_margin;
 
     return lower_margin < test_value && test_value < upper_margin;
+}
+
+/// Set two vectors to be perpendicular to another couple vectors that are antiparallel
+///
+pub fn orthogonal_from_antiparallel(input1: &Vector2<i32>, input2: &Vector2<i32>, orthogonal1: &mut Vector2<i32>, orthogonal2: &mut Vector2<i32>) {
+    if (input1.x * -1 != input2.x) || (input1.y * -1 != input2.y) {
+        panic!("The provided vector aren't antiparallel, they don't fulfill the condition that their
+                coordinates have the same absolute values with reversed signs");
+    } 
+
+    orthogonal1.x = input2.y;
+    orthogonal1.y = input1.x;
+
+    orthogonal2.x = input1.y;
+    orthogonal2.y = input2.x;
 }
