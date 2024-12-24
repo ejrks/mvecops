@@ -103,7 +103,7 @@ const SAMPLE_OUTPUT_RED: &str = "reduction#";
 const SAMPLE_OUTPUT_ACC: &str = "accumulations.txt";
 const SAMPLE_OUTPUT_DOMVE: &str = "dominantVE.txt";
 const SAMPLE_OUTPUT_DOMHR: &str = "dominantHR.txt";
-const SAMPLE_OUTPUT_SUBST: &str = "substraction.txt";
+const SAMPLE_OUTPUT_SUBST: &str = "subtraction.txt";
 const SAMPLE_OUTPUT_INFLX: &str = "inflexion.txt";
 
 #[cfg(test)]
@@ -452,6 +452,42 @@ mod tests {
         assert_eq!(close_enough(result, 1.0, error_margin), true);  
         result = get_index_distance(4026, 3962, 64);
         assert_eq!(close_enough(result, 1.0, error_margin), true); 
+    }
+
+    #[test]
+    fn compute_middle_points() {
+        let mut assertion = false;
+        let mut result: usize = 0;
+
+        let delta1: &mut Vector2<i32> = &mut Vector2::new(0, 0);
+        let delta2: &mut Vector2<i32> = &mut Vector2::new(0, 0);
+
+        result = get_middle_point(1741, 2226, 64, delta1, delta2);
+        println!("VALUE DELTA1 [{}][{}]", delta1.x, delta1.y);
+        println!("VALUE DELTA2 [{}][{}]", delta2.x, delta2.y);
+        assert_eq!(result, 1951);
+        result = get_middle_point(2226, 1741, 64, delta1, delta2);
+        println!("VALUE DELTA1 [{}][{}]", delta1.x, delta1.y);
+        println!("VALUE DELTA2 [{}][{}]", delta2.x, delta2.y);
+        assert_eq!(result, 1951);
+
+        result = get_middle_point(0, 4095, 64, delta1, delta2);
+        println!("VALUE DELTA1 [{}][{}]", delta1.x, delta1.y);
+        println!("VALUE DELTA2 [{}][{}]", delta2.x, delta2.y);
+        assert_eq!(result, 2015);
+        result = get_middle_point(4095, 0, 64, delta1, delta2);
+        println!("VALUE DELTA1 [{}][{}]", delta1.x, delta1.y);
+        println!("VALUE DELTA2 [{}][{}]", delta2.x, delta2.y);
+        assert_eq!(result, 2015);
+
+        result = get_middle_point(3990, 178, 64, delta1, delta2);
+        println!("VALUE DELTA1 [{}][{}]", delta1.x, delta1.y);
+        println!("VALUE DELTA2 [{}][{}]", delta2.x, delta2.y);
+        assert_eq!(result, 2084);
+        result = get_middle_point(178, 3990, 64, delta1, delta2);
+        println!("VALUE DELTA1 [{}][{}]", delta1.x, delta1.y);
+        println!("VALUE DELTA2 [{}][{}]", delta2.x, delta2.y);
+        assert_eq!(result, 2084);
     }
 
     #[test]

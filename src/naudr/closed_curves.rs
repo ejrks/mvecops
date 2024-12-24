@@ -1,5 +1,9 @@
 use crate::Vmatrix;
 use crate::Trigonometric;
+use crate::get_index_distance;
+use crate::row_distance;
+
+use std::vec::Vec;
 
 /// If some curve is ignored, you can try to increase this value to make more checks before the
 /// process "gives up". Big numbers might throw it into a very consuming and long-lasting loop.
@@ -224,23 +228,45 @@ fn paint_on_direction(from_index: usize, row_size: usize, direction: &Trigonomet
     return new_index
 }
 
+fn get_smooth_curves(from_point: usize, to_point: usize, row_size: usize) {
+    let mut result_list: Vec<Vec<usize>> = vec![];
+
+    // let middle_point = 
+}
+
 // Result set is using PREVIOUS CURVE DATA
 pub fn mark_curve_points(input_data: &Vmatrix<u32>, result_set: &mut Vmatrix<u32>, global_data: &mut GlobalCurveData, dominant_curve: bool) {
     // We used to make a backup of the input here on C#, but it might be unnecesarry, if input is modified
     // throughout this, create the backup
 
-    let working_input = &input_data.data;
-    let working_result = &mut result_set.data;
+    let row_size = global_data.row_size;
 
-    let mut returing_index: usize = 0;
+    let working_input = &input_data.data;
+
+    let mut returning_index: usize = 0;
 
     let set_length = input_data.data.len();
     for i in 0..set_length {
         global_data.global_orderd_cardin = 0;
 
-        if working_input[i] == 2 && working_result[i] == 0 {
-            working_result[i] = 3;
-            // 
+        if working_input[i] == 2 && result_set.data[i] == 0 {
+            result_set.data[i] = 3;
+            returning_index = find_curve_on(&input_data, result_set, global_data, i);
+
+            if row_distance(i as i32, returning_index as i32, row_size) == 0 && !dominant_curve {
+                for x in i..=returning_index {
+                    result_set.data[x] = 1;
+                }
+
+                continue;
+            }
+
+            if returning_index == i {
+                result_set.data[i] = 1;
+            }
+            else {
+                //
+            }
         }
     }
 }
@@ -268,6 +294,8 @@ fn get_if_curve_value (input_data: &Vmatrix<u32>, result_output: &mut Vmatrix<u3
 pub fn find_curve_on(input_data: &Vmatrix<u32>, result_output: &mut Vmatrix<u32>, global_data: &GlobalCurveData, index: usize) -> usize{
     // Should have a working result_set by this point - on C# we used to call a "TestOrInitialize"
 
+    let row_size = global_data.row_size;
+
     let mut current_direction = Trigonometric::COS;
     let mut current_index = index;
     let mut set_length = input_data.data.len();
@@ -281,9 +309,9 @@ pub fn find_curve_on(input_data: &Vmatrix<u32>, result_output: &mut Vmatrix<u32>
     let mut cardinal_changes: usize = 0;
     let mut last_index_in_loop: i32 = -1;
 
-    let mut index_of_best_distance: i32 = -1;
+    let mut index_of_best_distance: usize = 0;
     let mut current_index_distance = 0.0;
-    let mut current_distance_bestv = 0.0;
+    let mut current_distance_best = 0.0;
 
     while current_index < set_length && number_of_checks < maximum_checks {
         if cardinal_changes >= 4 && last_index_in_loop == current_index as i32 {
@@ -299,7 +327,16 @@ pub fn find_curve_on(input_data: &Vmatrix<u32>, result_output: &mut Vmatrix<u32>
             
             number_of_checks += 1;
 
-            // current_index_distance = 
+            current_index_distance = get_index_distance(index as i32, current_index as i32, row_size);
+            if current_index_distance > current_distance_best {
+                current_distance_best = current_index_distance;
+                index_of_best_distance = current_index;
+            }
+
+            if index_natural_direction == index {
+                result_output.data[index_of_best_distance] = 3;
+                return index_of_best_distance;
+            }
 
             continue;
         }
@@ -308,11 +345,18 @@ pub fn find_curve_on(input_data: &Vmatrix<u32>, result_output: &mut Vmatrix<u32>
         if index_45_degrees != current_index {
             current_index = index_45_degrees;
             cardinal_changes = 0;
-
+            
             number_of_checks += 1;
 
+            current_index_distance = get_index_distance(index as i32, current_index as i32, row_size);
+            if current_index_distance > current_distance_best {
+                current_distance_best = current_index_distance;
+                index_of_best_distance = current_index;
+            }
+
             if index_45_degrees == index {
-                return 666666;
+                result_output.data[index_of_best_distance] = 3;
+                return index_of_best_distance;
             }
 
             continue;
@@ -322,11 +366,18 @@ pub fn find_curve_on(input_data: &Vmatrix<u32>, result_output: &mut Vmatrix<u32>
         if index_overdue_direction != current_index {
             current_index = index_overdue_direction;
             cardinal_changes = 0;
-
+            
             number_of_checks += 1;
 
+            current_index_distance = get_index_distance(index as i32, current_index as i32, row_size);
+            if current_index_distance > current_distance_best {
+                current_distance_best = current_index_distance;
+                index_of_best_distance = current_index;
+            }
+
             if index_overdue_direction == index {
-                return 666666;
+                result_output.data[index_of_best_distance] = 3;
+                return index_of_best_distance;
             }
 
             continue;
