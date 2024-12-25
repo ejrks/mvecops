@@ -41,7 +41,7 @@ impl CountingPointer {
 /// "samplekanji.txt" is used as the input sample. Running cargo test will create a file called "accumulations.txt"
 /// as a result and "reduction#[number].txt" to show the steps in between.
 ///
-pub fn get_accumulation(input_data: Vmatrix<u32>, output_path: &Option<&str>) -> Vmatrix<u32>{
+pub fn get_accumulation(input_data: &Vmatrix<u32>, output_path: &Option<&str>) -> Vmatrix<u32>{
     let mut working_data = input_data.clone();
 
     let mut reductions: u32 = 1;
@@ -50,6 +50,7 @@ pub fn get_accumulation(input_data: Vmatrix<u32>, output_path: &Option<&str>) ->
 
     while process && reductions < MAXIMUM_REDUCTIONS_DECORNERING {
         let new_data: Vmatrix<u32> = decorner_once(&working_data, &mut process);
+        // let new_data: Vmatrix<u32> = decorner_once(input_data, &mut process);
 
         accumulative_data.push(new_data.clone());
 

@@ -62,6 +62,21 @@ where
         new_instance
     }
 
+    /// Build a new Vmatrix using data from an existing standard vector
+    ///
+    pub fn build_nomove(size: usize, new_data: &Vec<T>) -> Vmatrix<T> {
+        let mut new_instance: Vmatrix<T> = Vmatrix {
+            data: Vec::new(),
+            size,
+        };
+
+        for entry in new_data {
+             new_instance.data.push(entry.clone());
+        }
+
+        new_instance
+    }
+
     /// Rearrange the data so columns are read as files.
     ///
     pub fn transpose(&mut self) {

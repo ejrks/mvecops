@@ -51,7 +51,7 @@ fn write_out_sample_reductions() {
   
         let output_path = Some(SAMPLE_OUTPUT_RED);
 
-        let accumulations: Vmatrix<u32> = get_accumulation(input_data, &output_path);
+        let accumulations: Vmatrix<u32> = get_accumulation(&input_data, &output_path);
         accumulations.write_to_file(SAMPLE_OUTPUT_ACC.to_string());
     }
 
@@ -62,7 +62,7 @@ fn write_out_sample_reductions() {
 pub fn get_accumulations_from_file(target_file: String, sample_size: usize) -> Vmatrix<u32> {
     let input_data: Vmatrix<u32> = textfile_to_vmatrix(target_file, sample_size);
     let output_path = None;
-    get_accumulation(input_data, &output_path)
+    get_accumulation(&input_data, &output_path)
 }
 
 /// See [get_accumulations_from_file]. This function is meant to be used with data directly, instead
@@ -70,7 +70,7 @@ pub fn get_accumulations_from_file(target_file: String, sample_size: usize) -> V
 ///
 pub fn get_accumulations_from_data(input_data: Vmatrix<u32>, sample_size: usize) -> Vmatrix<u32> {
     let output_path = None;
-    get_accumulation(input_data, &output_path)
+    get_accumulation(&input_data, &output_path)
 }
 
 // Is sample_size ever used??
@@ -96,7 +96,50 @@ pub fn get_substractions_from_data(accumulations: Vmatrix<u32>, sample_size: usi
     return substraction_result;
 }
 
-// --- //
+pub fn get_inflexions_from_vector(input_data: &Vec<u32>, sample_size: usize, dominants_recurrency: usize) -> GlobalCurveData {
+    let format_input_data = Vmatrix::build_nomove(sample_size, input_data);
+    return get_complete_inflexions_from_data(&format_input_data, sample_size, dominants_recurrency);
+}
+
+pub fn get_complete_inflexions_from_data(input_data: &Vmatrix<u32>, sample_size: usize, dominants_recurrency: usize) -> GlobalCurveData {
+    let mut global_curve_data = GlobalCurveData::new(64);
+    global_curve_data.transpose_internal();
+
+    let output_path = None;
+    let accumulations: Vmatrix<u32> = get_accumulation(&input_data, &output_path);
+
+    let accumulations_transposed = accumulations.transposed_copy();
+
+    let vertical_dominant = recurrent_trace(&accumulations, dominants_recurrency);
+    let horizont_dominant = recurrent_trace(&accumulations_transposed, dominants_recurrency);
+
+    let mut subtractions: Vmatrix<u32> = accumulations.normal_copy();
+    subtractions = subtractions.xat(&vertical_dominant);
+    subtractions.transpose();
+    subtractions = subtractions.xat(&horizont_dominant);
+    subtractions.transpose();
+
+    let inflexion_curves = get_curves(&mut global_curve_data, &subtractions);
+
+    let mut result_set_unclean = Vmatrix::initialize(sample_size, 0);
+    mark_curve_points(&inflexion_curves, &mut result_set_unclean, &mut global_curve_data, false);
+
+    let vertical_inflexion = get_curves(&mut global_curve_data, &vertical_dominant);
+
+    let mut result_set_vertical = Vmatrix::initialize(sample_size, 0);
+    mark_curve_points(&vertical_inflexion, &mut result_set_vertical, &mut global_curve_data, true);
+
+    global_curve_data.transpose_internal();
+
+    let horizontal_inflexion = get_curves(&mut global_curve_data, &horizont_dominant);
+
+    let mut result_set_horizontal = Vmatrix::initialize(sample_size, 0);
+    mark_curve_points(&horizontal_inflexion, &mut result_set_horizontal, &mut global_curve_data, true);
+
+    return global_curve_data;
+}
+
+// --- END OF API --- //
 
 const SAMPLE_INPUT_PATH: &str = "samplekanji.txt";
 const SAMPLE_OUTPUT_CLEAR: &str = "sampleoutput.txt";
@@ -646,26 +689,44 @@ mod tests {
         subtractions.transpose();
 
         let inflexion_curves = get_curves(&mut global_curve_data, &subtractions);
-        inflexion_curves.write_to_file(SAMPLE_OUTPUT_INFLX.to_string());
+        // inflexion_curves.write_to_file(SAMPLE_OUTPUT_INFLX.to_string());
 
         let mut result_set_unclean = Vmatrix::initialize(sample_size, 0);
         mark_curve_points(&inflexion_curves, &mut result_set_unclean, &mut global_curve_data, false);
 
         let vertical_inflexion = get_curves(&mut global_curve_data, &vertical_dominant);
-        vertical_inflexion.write_to_file(SAMPLE_OUTPUT_INFLX_VER.to_string());
+        // vertical_inflexion.write_to_file(SAMPLE_OUTPUT_INFLX_VER.to_string());
 
         let mut result_set_vertical = Vmatrix::initialize(sample_size, 0);
         mark_curve_points(&vertical_inflexion, &mut result_set_vertical, &mut global_curve_data, true);
 
         global_curve_data.transpose_internal();
         let horizontal_inflexion = get_curves(&mut global_curve_data, &horizont_dominant);
-        horizontal_inflexion.write_to_file(SAMPLE_OUTPUT_INFLX_HOR.to_string());
+        // horizontal_inflexion.write_to_file(SAMPLE_OUTPUT_INFLX_HOR.to_string());
 
         let mut result_set_horizontal = Vmatrix::initialize(sample_size, 0);
         mark_curve_points(&horizontal_inflexion, &mut result_set_horizontal, &mut global_curve_data, true);
-
-        // global_curve_data.curves_global_output.write_to_file(String::from("global_output.txt"));
-        // global_curve_data.curves_global_orderd.write_to_file(String::from("global_orderd.txt"));
     }
 
+    #[test]
+    fn api_call_inflexions_vmatrix() {
+        let sample_size = 64;
+        let dominants_recurrency = 12;
+        let input_data: Vmatrix<u32> = textfile_to_vmatrix(String::from(SAMPLE_INPUT_PATH.to_string()), sample_size);
+
+        let result = get_complete_inflexions_from_data(&input_data, sample_size, dominants_recurrency);
+    }
+
+    #[test]
+    fn api_call_inflexions_vector() {
+        let sample_size = 64;
+        let dominants_recurrency = 12;
+
+        match textfile_to_int_vector(SAMPLE_INPUT_PATH.to_string()) {
+        Err(error) => panic!("Input data couldn't be retrieved: {}", error),
+        Ok(all_data) => {
+            let result = get_inflexions_from_vector(&all_data, sample_size, dominants_recurrency);
+        }
+    }
+    }
 }
