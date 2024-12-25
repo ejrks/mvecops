@@ -1,12 +1,5 @@
 use std::fs;
 
-use crate::Vector2;
-
-use crate::get_index_as_coordinates;
-
-trait Number {}
-impl Number for u32 {}
-
 /// Basic structure of mvecops, stores the size of a "row" and all the data in a generic vector
 ///
 #[derive(Clone)]
