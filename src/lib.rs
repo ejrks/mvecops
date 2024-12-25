@@ -73,6 +73,7 @@ pub fn get_accumulations_from_data(input_data: Vmatrix<u32>, sample_size: usize)
     get_accumulation(input_data, &output_path)
 }
 
+// Is sample_size ever used??
 /// Get all the curves found in a set of data. A set of curves within a vector that is being treated
 /// as a matrix is any body of data found in a curve closed from the rest of the data and that is not
 /// made by completely vertical traces (a continuous column of filled data) or completely horizontal
@@ -87,9 +88,9 @@ pub fn get_substractions_from_data(accumulations: Vmatrix<u32>, sample_size: usi
     let horizont_dominant = recurrent_trace(&accumulations_transposed, dominants_recurrency);
 
     let mut substraction_result: Vmatrix<u32> = accumulations.normal_copy();
-    substraction_result = substraction_result.xat(vertical_dominant);
+    substraction_result = substraction_result.xat(&vertical_dominant);
     substraction_result.transpose();
-    substraction_result = substraction_result.xat(horizont_dominant);
+    substraction_result = substraction_result.xat(&horizont_dominant);
     substraction_result.transpose();
 
     return substraction_result;
@@ -105,6 +106,8 @@ const SAMPLE_OUTPUT_DOMVE: &str = "dominantVE.txt";
 const SAMPLE_OUTPUT_DOMHR: &str = "dominantHR.txt";
 const SAMPLE_OUTPUT_SUBST: &str = "subtraction.txt";
 const SAMPLE_OUTPUT_INFLX: &str = "inflexion.txt";
+const SAMPLE_OUTPUT_INFLX_VER: &str = "inflexion_ver.txt";
+const SAMPLE_OUTPUT_INFLX_HOR: &str = "inflexion_hor.txt";
 
 #[cfg(test)]
 mod tests {
@@ -279,7 +282,7 @@ mod tests {
             data: sample_data_5,
         };
 
-        data_sample_1.xat(data_sample_2);
+        data_sample_1.xat(&data_sample_2);
     }
 
     #[test]
@@ -298,7 +301,7 @@ mod tests {
             data: cannot_be_on_data_5,
         };
 
-        let result = data_sample_1.xat(data_sample_2);
+        let result = data_sample_1.xat(&data_sample_2);
         assert_eq!(result.data, expected_result_dt5);
     }
 
@@ -404,7 +407,7 @@ mod tests {
     }
 
     #[test]
-    fn get_inflexion_curves() {
+    fn get_first_inflexion_curve() {
         let sample_size: usize = 64;
         let dominants_recurrency = 12;
 
@@ -415,7 +418,7 @@ mod tests {
         let mut subtractions = get_substractions_from_data(accumulations, sample_size, dominants_recurrency);
 
         let inflexion_curves = get_curves(&mut global_curve_data, &subtractions);
-        inflexion_curves.write_to_file(SAMPLE_OUTPUT_INFLX.to_string());
+        // inflexion_curves.write_to_file(SAMPLE_OUTPUT_INFLX.to_string());
 
         let mut result_set_unclean = Vmatrix::initialize(sample_size, 0);
         mark_curve_points(&inflexion_curves, &mut result_set_unclean, &mut global_curve_data, false);
@@ -620,4 +623,49 @@ mod tests {
         result = array_position_vector_displacement(input, row_size, &direction);
         assert_eq!(result, 0);
     }
+
+    #[test]
+    fn get_complete_inflexions() {
+        let sample_size: usize = 64;
+        let dominants_recurrency = 12;
+
+        let mut global_curve_data = GlobalCurveData::new(64);
+        global_curve_data.transpose_internal();
+
+        let accumulations: Vmatrix<u32> = get_accumulations_from_file(SAMPLE_INPUT_PATH.to_string(), sample_size);
+
+        let accumulations_transposed = accumulations.transposed_copy();
+
+        let vertical_dominant = recurrent_trace(&accumulations, dominants_recurrency);
+        let horizont_dominant = recurrent_trace(&accumulations_transposed, dominants_recurrency);
+
+        let mut subtractions: Vmatrix<u32> = accumulations.normal_copy();
+        subtractions = subtractions.xat(&vertical_dominant);
+        subtractions.transpose();
+        subtractions = subtractions.xat(&horizont_dominant);
+        subtractions.transpose();
+
+        let inflexion_curves = get_curves(&mut global_curve_data, &subtractions);
+        inflexion_curves.write_to_file(SAMPLE_OUTPUT_INFLX.to_string());
+
+        let mut result_set_unclean = Vmatrix::initialize(sample_size, 0);
+        mark_curve_points(&inflexion_curves, &mut result_set_unclean, &mut global_curve_data, false);
+
+        let vertical_inflexion = get_curves(&mut global_curve_data, &vertical_dominant);
+        vertical_inflexion.write_to_file(SAMPLE_OUTPUT_INFLX_VER.to_string());
+
+        let mut result_set_vertical = Vmatrix::initialize(sample_size, 0);
+        mark_curve_points(&vertical_inflexion, &mut result_set_vertical, &mut global_curve_data, true);
+
+        global_curve_data.transpose_internal();
+        let horizontal_inflexion = get_curves(&mut global_curve_data, &horizont_dominant);
+        horizontal_inflexion.write_to_file(SAMPLE_OUTPUT_INFLX_HOR.to_string());
+
+        let mut result_set_horizontal = Vmatrix::initialize(sample_size, 0);
+        mark_curve_points(&horizontal_inflexion, &mut result_set_horizontal, &mut global_curve_data, true);
+
+        // global_curve_data.curves_global_output.write_to_file(String::from("global_output.txt"));
+        // global_curve_data.curves_global_orderd.write_to_file(String::from("global_orderd.txt"));
+    }
+
 }

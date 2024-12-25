@@ -12,7 +12,7 @@ where
     ///
     /// The function panics if the inputs have different data length
     ///
-    pub fn xat(&self, other: Vmatrix<u32>) -> Vmatrix<u32> {
+    pub fn xat(&self, other: &Vmatrix<u32>) -> Vmatrix<u32> {
         let set_length_1: usize = self.data.len();
         let set_length_2: usize = other.data.len();
 
