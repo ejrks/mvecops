@@ -416,6 +416,9 @@ mod tests {
 
         let inflexion_curves = get_curves(&mut global_curve_data, &subtractions);
         inflexion_curves.write_to_file(SAMPLE_OUTPUT_INFLX.to_string());
+
+        let mut result_set_unclean = Vmatrix::initialize(sample_size, 0);
+        mark_curve_points(&inflexion_curves, &mut result_set_unclean, &mut global_curve_data, false);
     }
 
     #[test]
@@ -579,8 +582,42 @@ mod tests {
  
         let mut input: usize = 0;
         let mut direction: Vector2<i32> = Vector2::new(10, 0);
-        
-        let mut result = array_position_vector_displacement(input, row_size, direction);
+        let mut result = array_position_vector_displacement(input, row_size, &direction);
         assert_eq!(result, 10);
+
+        input = 396;
+        direction = Vector2::new(5, 12);
+        result = array_position_vector_displacement(input, row_size, &direction);
+        assert_eq!(result, 1169);
+
+        input = 1169;
+        direction = Vector2::new(-5, -12);
+        result = array_position_vector_displacement(input, row_size, &direction);
+        assert_eq!(result, 396);
+
+        input = 1169;
+        direction = Vector2::new(-9, 4);
+        result = array_position_vector_displacement(input, row_size, &direction);
+        assert_eq!(result, 1416);
+
+        input = 1416;
+        direction = Vector2::new(20, -15);
+        result = array_position_vector_displacement(input, row_size, &direction);
+        assert_eq!(result, 476);
+
+        input = 0;
+        direction = Vector2::new(63, 0);
+        result = array_position_vector_displacement(input, row_size, &direction);
+        input = result as usize;
+        direction = Vector2::new(0, 63);
+        result = array_position_vector_displacement(input, row_size, &direction);
+        input = result as usize;
+        assert_eq!(input, 4095);
+        direction = Vector2::new(-63, 0);
+        result = array_position_vector_displacement(input, row_size, &direction);
+        input = result as usize;
+        direction = Vector2::new(0, -63);
+        result = array_position_vector_displacement(input, row_size, &direction);
+        assert_eq!(result, 0);
     }
 }

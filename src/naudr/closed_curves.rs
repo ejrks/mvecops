@@ -4,8 +4,11 @@ use crate::Vector2;
 
 use crate::get_index_distance;
 use crate::get_middle_point;
+use crate::orthogonal_from_antiparallel;
+use crate::array_position_vector_displacement;
 
 use crate::row_distance;
+use crate::column_distance;
 
 use std::vec::Vec;
 
@@ -39,10 +42,10 @@ pub struct GlobalCurveData {
 
     /// Each new curve is defined by this increasing value
     ///
-    pub global_output_number: usize,
+    pub global_output_number: u32,
     /// Each new point within the current curve is ordered according to this increasing value
     ///
-    pub global_orderd_cardin: usize,
+    pub global_orderd_cardin: u32,
 }
 
 impl GlobalCurveData {
@@ -253,14 +256,29 @@ fn get_smooth_curves(input_data: &Vmatrix<u32>, from_point: usize, to_point: usi
         let orthogonal1: &mut Vector2<i32> = &mut Vector2::new(0, 0);
         let orthogonal2: &mut Vector2<i32> = &mut Vector2::new(0, 0);
 
-        //
+        orthogonal_from_antiparallel(delta1, delta2, orthogonal1, orthogonal2);
+
+        let middle_point_orth1 = array_position_vector_displacement(middle_point, row_size, orthogonal1);
+        let middle_point_orth2 = array_position_vector_displacement(middle_point, row_size, orthogonal2);
+
+        // Another backup set
+        if input_data.test_index(middle_point_orth1 as usize) {
+            result_list.append(&mut get_smooth_curves(&input_data, middle_point, middle_point_orth1 as usize, row_size));
+        }
+        if input_data.test_index(middle_point_orth2 as usize) {
+            result_list.append(&mut get_smooth_curves(&input_data, middle_point, middle_point_orth2 as usize, row_size));
+        }
     }
 
     return result_list;
 }
 
-// Result set is using PREVIOUS CURVE DATA
-pub fn mark_curve_points(input_data: &Vmatrix<u32>, result_set: &mut Vmatrix<u32>, global_data: &mut GlobalCurveData, dominant_curve: bool) {
+/// From the data extracted by processing the curves on a data set, set the order in which the curve points
+/// are defined and group them through a number. This modifies global_data to have the last curves that were
+/// painted on curves_global_output and the order in curves_global_orderd. This data is reused to get the
+/// definitions for every type of curve on a dataset
+///
+pub fn mark_curve_points<'a>(input_data: &Vmatrix<u32>, result_set: &'a mut Vmatrix<u32>, global_data: &mut GlobalCurveData, dominant_curve: bool) -> &'a mut Vmatrix<u32> {
     // We used to make a backup of the input here on C#, but it might be unnecesarry, if input is modified
     // throughout this, create the backup
 
@@ -290,10 +308,64 @@ pub fn mark_curve_points(input_data: &Vmatrix<u32>, result_set: &mut Vmatrix<u32
                 result_set.data[i] = 1;
             }
             else {
-                //
+                let smooth_curve_points = get_smooth_curves(&input_data, i, returning_index, row_size);
+                if !dominant_curve {
+                    write_to_global(global_data, i);
+                    for entry in smooth_curve_points {
+                        write_to_global(global_data, entry);
+                        result_set.data[entry] = 3;
+                    }
+                    write_to_global(global_data, returning_index);
+                }
+                else {
+                    let middle_point_entry = smooth_curve_points[0];
+
+                    result_set.data[i] = 1;
+                    result_set.data[returning_index] = 1;
+                    result_set.data[middle_point_entry] = 0;
+
+                    let xdelta1 = column_distance(i as i32, middle_point_entry as i32, row_size);
+                    let xdelta2 = column_distance(returning_index as i32, middle_point_entry as i32, row_size);
+
+                    let final_point1 = middle_point_entry as i32 + xdelta1;
+                    let final_point2 = middle_point_entry as i32 + xdelta2;
+
+                    result_set.data[final_point1 as usize] = 3;
+                    write_to_global(global_data, final_point1 as usize);
+                    result_set.data[final_point2 as usize] = 3;
+                    write_to_global(global_data, final_point2 as usize);
+                }
+
+                global_data.global_output_number += 1;
             }
         }
     }
+
+    return result_set;
+}
+
+/// Write the curve data to the global data input
+///
+/// # Limitation
+///
+/// When two different curves are defined on the same point, to prevent obfuscation, the index at which
+/// the overlapping curve is defined is increased by 1. On higher resolutions, this shouldn't be noticeable
+/// unless there happens to be a point defined at the last column of the data. Also, this situation should
+/// have been prevented when calling [decorner_once] from the accumulate module, as values on the borders
+/// of the matrix aren't ever kept, being impossible for them to be surrounded by data.
+fn write_to_global(global_data: &mut GlobalCurveData, at_index: usize) {
+    let curves_output = &mut global_data.curves_global_output.data;
+    let curves_orderd = &mut global_data.curves_global_orderd.data;
+
+    let value_at_global = curves_output[at_index];
+    if value_at_global != 0 {
+        write_to_global(global_data, at_index + 1);
+        return;
+    }
+
+    curves_output[at_index] = global_data.global_output_number;
+    curves_orderd[at_index] = global_data.global_orderd_cardin;
+    global_data.global_orderd_cardin += 1;
 }
 
 fn get_if_curve_value (input_data: &Vmatrix<u32>, result_output: &mut Vmatrix<u32>, from_index: usize, global_data: &GlobalCurveData, direction: &Trigonometric, offset: i32) -> usize {

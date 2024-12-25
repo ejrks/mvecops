@@ -158,11 +158,11 @@ pub fn orthogonal_from_antiparallel(input1: &Vector2<i32>, input2: &Vector2<i32>
 
 /// Move an index by a vector displacement on the data
 ///
-pub fn array_position_vector_displacement(input_index: usize, row_size: usize, direction: Vector2<i32>) -> i32 {
+pub fn array_position_vector_displacement(input_index: usize, row_size: usize, direction: &Vector2<i32>) -> i32 {
     let internal_rs = row_size as i32;
 
     let mut new_position: Vector2<i32> = get_index_as_coordinates(input_index, row_size);
-    new_position = sum_vectors(&new_position, &direction);
+    new_position = sum_vectors(&new_position, direction);
 
     let result = new_position.x + internal_rs * new_position.y;
     return result;
