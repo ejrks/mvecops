@@ -309,6 +309,11 @@ pub fn mark_curve_points<'a>(input_data: &Vmatrix<u32>, result_set: &'a mut Vmat
             }
             else {
                 let smooth_curve_points = get_smooth_curves(&input_data, i, returning_index, row_size);
+
+                if smooth_curve_points.len() == 0 {
+                     continue;
+                }
+
                 if !dominant_curve {
                     write_to_global(global_data, i);
                     for entry in smooth_curve_points {

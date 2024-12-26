@@ -96,13 +96,13 @@ pub fn get_substractions_from_data(accumulations: Vmatrix<u32>, sample_size: usi
     return substraction_result;
 }
 
-pub fn get_inflexions_from_vector(input_data: &Vec<u32>, sample_size: usize, dominants_recurrency: usize) -> GlobalCurveData {
-    let format_input_data = Vmatrix::build_nomove(sample_size, input_data);
+pub fn get_inflexions_from_vector(input_data: Vec<u32>, sample_size: usize, dominants_recurrency: usize) -> GlobalCurveData {
+    let format_input_data = Vmatrix::build(sample_size, input_data);
     return get_complete_inflexions_from_data(&format_input_data, sample_size, dominants_recurrency);
 }
 
 pub fn get_complete_inflexions_from_data(input_data: &Vmatrix<u32>, sample_size: usize, dominants_recurrency: usize) -> GlobalCurveData {
-    let mut global_curve_data = GlobalCurveData::new(64);
+    let mut global_curve_data = GlobalCurveData::new(sample_size);
     global_curve_data.transpose_internal();
 
     let output_path = None;
@@ -706,6 +706,9 @@ mod tests {
 
         let mut result_set_horizontal = Vmatrix::initialize(sample_size, 0);
         mark_curve_points(&horizontal_inflexion, &mut result_set_horizontal, &mut global_curve_data, true);
+
+        // global_curve_data.curves_global_output.write_to_file(String::from("resultsapi1.txt"));
+        // global_curve_data.curves_global_orderd.write_to_file(String::from("resultsapi2.txt"));
     }
 
     #[test]
@@ -725,7 +728,7 @@ mod tests {
         match textfile_to_int_vector(SAMPLE_INPUT_PATH.to_string()) {
         Err(error) => panic!("Input data couldn't be retrieved: {}", error),
         Ok(all_data) => {
-            let result = get_inflexions_from_vector(&all_data, sample_size, dominants_recurrency);
+            let result = get_inflexions_from_vector(all_data, sample_size, dominants_recurrency);
         }
     }
     }

@@ -118,13 +118,7 @@ pub fn process_corners(input_data: &Vmatrix<u32>, output_data: &mut Vmatrix<u32>
 
     let mut surrounding_all_non_zero = false;
 
-    let mut written_times = 0;
-
     while pointer.current() != last_pointer {
-        if written_times >= 500 && written_times <= 510 {
-                output_data.write_to_file(String::from("dataat5xx.txt"));
-        }
-
         pointer_module = pointer.current() % row_size;
         if pointer_module == 0 {
             previous_active = false;
