@@ -105,7 +105,6 @@ pub fn get_curves(global_data: &mut GlobalCurveData, input_data: &Vmatrix<u32>) 
 ///
 fn hollow_set(anchor_value: u32, hollow_value: u32, row_size: usize, input_data: &Vmatrix<u32>, result_set: &mut Vmatrix<u32>) {
     let set_size = result_set.data.len();
-    println!("Size of the set {}", set_size);
 
     let mut row_count = 0;
     let mut anchor_enabled: bool = false;

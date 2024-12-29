@@ -13,6 +13,7 @@ use naudr::accumulate::*;
 use naudr::recurrent::*;
 use naudr::operate::*;
 use naudr::closed_curves::*;
+use naudr::bloat::*;
 
 // Remove usage of naudr without qualifying the name, common operations are being used and might
 // overlap user api
@@ -139,6 +140,55 @@ pub fn get_complete_inflexions_from_data(input_data: &Vmatrix<u32>, sample_size:
     return global_curve_data;
 }
 
+pub fn get_curve_no_reductions(input_data: Vec<u32>, sample_size: usize, dominants_recurrency: usize) -> GlobalCurveData {
+    let format_input_data = Vmatrix::build(sample_size, input_data);
+    return get_inflexions_no_reduction(&format_input_data, sample_size, dominants_recurrency);
+}
+
+pub fn get_inflexions_no_reduction(input_data: &Vmatrix<u32>, sample_size: usize, dominants_recurrency: usize) -> GlobalCurveData {
+    let mut global_curve_data = GlobalCurveData::new(sample_size);
+    global_curve_data.transpose_internal();
+
+    let input_transposed = input_data.transposed_copy();
+
+    let vertical_dominant = recurrent_trace(input_data, dominants_recurrency);
+    let horizont_dominant = recurrent_trace(&input_transposed, dominants_recurrency);
+
+    let mut subtractions: Vmatrix<u32> = input_data.normal_copy();
+    subtractions = subtractions.xat(&vertical_dominant);
+    subtractions.transpose();
+    subtractions = subtractions.xat(&horizont_dominant);
+    subtractions.transpose();
+
+    let inflexion_curves = get_curves(&mut global_curve_data, &subtractions);
+
+    let mut result_set_unclean = Vmatrix::initialize(sample_size, 0);
+    mark_curve_points(&inflexion_curves, &mut result_set_unclean, &mut global_curve_data, false);
+
+    let vertical_inflexion = get_curves(&mut global_curve_data, &vertical_dominant);
+
+    let mut result_set_vertical = Vmatrix::initialize(sample_size, 0);
+    mark_curve_points(&vertical_inflexion, &mut result_set_vertical, &mut global_curve_data, true);
+
+    global_curve_data.transpose_internal();
+
+    let horizontal_inflexion = get_curves(&mut global_curve_data, &horizont_dominant);
+
+    let mut result_set_horizontal = Vmatrix::initialize(sample_size, 0);
+    mark_curve_points(&horizontal_inflexion, &mut result_set_horizontal, &mut global_curve_data, true);
+
+    return global_curve_data;
+}
+
+pub fn get_bloat_data(input_data: Vec<u32>, sample_size: usize) -> GlobalCurveData {
+    let mut global_curve_data = GlobalCurveData::new(sample_size);
+
+    let format_input_data = Vmatrix::build(sample_size, input_data);
+    write_bloats(&mut global_curve_data, &format_input_data);
+    
+    return global_curve_data;
+}
+
 // --- END OF API --- //
 
 const SAMPLE_INPUT_PATH: &str = "samplekanji.txt";
@@ -151,6 +201,7 @@ const SAMPLE_OUTPUT_SUBST: &str = "subtraction.txt";
 const SAMPLE_OUTPUT_INFLX: &str = "inflexion.txt";
 const SAMPLE_OUTPUT_INFLX_VER: &str = "inflexion_ver.txt";
 const SAMPLE_OUTPUT_INFLX_HOR: &str = "inflexion_hor.txt";
+const SAMPLE_OUTPUT_BLOAT: &str = "bloating.txt";
 
 #[cfg(test)]
 mod tests {
@@ -732,4 +783,28 @@ mod tests {
         }
     }
     }
+
+    #[test]
+    fn api_call_bloating() {
+        let sample_size = 64;
+        let dominants_recurrency = 12;
+
+        match textfile_to_int_vector(SAMPLE_INPUT_PATH.to_string()) {
+        Err(error) => panic!("Input data couldn't be retrieved: {}", error),
+        Ok(all_data) => {
+            let result = get_bloat_data(all_data, sample_size);
+            result.curves_global_output.write_to_file(SAMPLE_OUTPUT_BLOAT.to_string());
+        }
+    }
+    }
+
+pub fn get_bloat_data(input_data: Vec<u32>, sample_size: usize) -> GlobalCurveData {
+    let mut global_curve_data = GlobalCurveData::new(sample_size);
+
+    let format_input_data = Vmatrix::build(sample_size, input_data);
+    write_bloats(&mut global_curve_data, &format_input_data);
+    
+    return global_curve_data;
+}
+
 }

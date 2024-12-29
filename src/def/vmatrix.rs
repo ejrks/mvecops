@@ -125,6 +125,23 @@ where
 
         return true
     }
+
+    /// Check if a given value is an index on the border of the matrix
+    ///
+    pub fn test_border_index(&self, input: usize) -> bool {
+        let x_value = input % self.size;
+        let y_value = input / self.size;
+
+        if x_value == 0 || x_value == (self.size - 1) {
+            return true;
+        }
+
+        if y_value == 0 || y_value == (self.size - 1) {
+            return true;
+        }
+
+        return false;
+    }
 }
 
 impl<T> Vmatrix<T> 
