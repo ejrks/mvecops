@@ -189,6 +189,53 @@ pub fn get_bloat_data(input_data: Vec<u32>, sample_size: usize) -> GlobalCurveDa
     return global_curve_data;
 }
 
+pub fn get_combined_data(input_data: Vec<u32>, sample_size: usize, dominants_recurrency: usize) -> (GlobalCurveData, GlobalCurveData) {
+    let format_input_data = Vmatrix::build(sample_size, input_data);
+
+    return get_dominant_plus_bloat(&format_input_data, sample_size, dominants_recurrency);
+}
+
+pub fn get_dominant_plus_bloat(input_data: &Vmatrix<u32>, sample_size: usize, dominants_recurrency: usize) -> (GlobalCurveData, GlobalCurveData) {
+    let mut global_curve_data = GlobalCurveData::new(sample_size);
+    global_curve_data.transpose_internal();
+
+    // let output_path = None;
+    // let accumulations: Vmatrix<u32> = get_accumulation(&input_data, &output_path);
+
+    let input_transposed = input_data.transposed_copy();
+
+    let vertical_dominant = recurrent_trace(&input_data, dominants_recurrency);
+    let horizont_dominant = recurrent_trace(&input_transposed, dominants_recurrency);
+
+    let mut subtractions: Vmatrix<u32> = input_data.normal_copy();
+    subtractions = subtractions.xat(&vertical_dominant);
+    subtractions.transpose();
+    subtractions = subtractions.xat(&horizont_dominant);
+    subtractions.transpose();
+
+    // let inflexion_curves = get_curves(&mut global_curve_data, &subtractions);
+
+    // let mut result_set_unclean = Vmatrix::initialize(sample_size, 0);
+    // mark_curve_points(&inflexion_curves, &mut result_set_unclean, &mut global_curve_data, false);
+
+    let vertical_inflexion = get_curves(&mut global_curve_data, &vertical_dominant);
+
+    let mut result_set_vertical = Vmatrix::initialize(sample_size, 0);
+    mark_curve_points(&vertical_inflexion, &mut result_set_vertical, &mut global_curve_data, true);
+
+    global_curve_data.transpose_internal();
+
+    let horizontal_inflexion = get_curves(&mut global_curve_data, &horizont_dominant);
+
+    let mut result_set_horizontal = Vmatrix::initialize(sample_size, 0);
+    mark_curve_points(&horizontal_inflexion, &mut result_set_horizontal, &mut global_curve_data, true);
+
+    let mut bloat_curve_data = GlobalCurveData::new(sample_size);
+    write_bloats(&mut bloat_curve_data, &subtractions);
+
+    return (global_curve_data, bloat_curve_data);
+}
+
 // --- END OF API --- //
 
 const SAMPLE_INPUT_PATH: &str = "samplekanji.txt";
@@ -202,6 +249,9 @@ const SAMPLE_OUTPUT_INFLX: &str = "inflexion.txt";
 const SAMPLE_OUTPUT_INFLX_VER: &str = "inflexion_ver.txt";
 const SAMPLE_OUTPUT_INFLX_HOR: &str = "inflexion_hor.txt";
 const SAMPLE_OUTPUT_BLOAT: &str = "bloating.txt";
+const SAMPLE_OUTPUT_BLOATC: &str = "bloating_combined.txt";
+const SAMPLE_OUTPUT_DMCO1: &str = "combined1.txt";
+const SAMPLE_OUTPUT_DMCO2: &str = "combined2.txt";
 
 #[cfg(test)]
 mod tests {
@@ -780,8 +830,7 @@ mod tests {
         Err(error) => panic!("Input data couldn't be retrieved: {}", error),
         Ok(all_data) => {
             let result = get_inflexions_from_vector(all_data, sample_size, dominants_recurrency);
-        }
-    }
+        }}
     }
 
     #[test]
@@ -794,17 +843,22 @@ mod tests {
         Ok(all_data) => {
             let result = get_bloat_data(all_data, sample_size);
             result.curves_global_output.write_to_file(SAMPLE_OUTPUT_BLOAT.to_string());
-        }
-    }
+        }}
     }
 
-pub fn get_bloat_data(input_data: Vec<u32>, sample_size: usize) -> GlobalCurveData {
-    let mut global_curve_data = GlobalCurveData::new(sample_size);
+    #[test]
+    fn api_call_combined() {
+        let sample_size = 64;
+        let dominants_recurrency = 12;
 
-    let format_input_data = Vmatrix::build(sample_size, input_data);
-    write_bloats(&mut global_curve_data, &format_input_data);
-    
-    return global_curve_data;
-}
+        match textfile_to_int_vector(SAMPLE_INPUT_PATH.to_string()) {
+        Err(error) => panic!("Input data couldn't be retrieved: {}", error),
+        Ok(all_data) => {
+            let result = get_combined_data(all_data, sample_size, dominants_recurrency);
+            result.1.curves_global_output.write_to_file(SAMPLE_OUTPUT_BLOATC.to_string());
+            result.0.curves_global_output.write_to_file(SAMPLE_OUTPUT_DMCO1.to_string());
+            result.0.curves_global_orderd.write_to_file(SAMPLE_OUTPUT_DMCO2.to_string());
+        }}
+    }
 
 }
