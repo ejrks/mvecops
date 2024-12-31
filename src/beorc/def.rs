@@ -1,6 +1,8 @@
 use std::fmt;
 use std::collections::HashSet;
 
+use std::fs;
+
 use crate::Vector2;
 
 use crate::get_coordinates_from;
@@ -8,6 +10,7 @@ use crate::sum_i64_vectors;
 use crate::sub_vectors;
 use crate::scale_vector;
 
+#[derive(Clone)]
 pub struct Trace {
     pub time_stamp: i64,
 
@@ -51,6 +54,7 @@ impl Trace {
     }
 }
 
+#[derive(Clone)]
 pub struct DefinitionUnit {
     pub id: String,
     pub resolution: i64,
@@ -71,6 +75,82 @@ impl DefinitionUnit {
     pub fn feed(&mut self, time_stamp: i64, indexes: Vec<i64>) {
         let new_trace = Trace::new(time_stamp, indexes, self.resolution);
         self.traces.push(new_trace);
+    }
+}
+
+pub struct TrainingUnit {
+    pub base: DefinitionUnit,
+
+    pub training_instances: Vec<DefinitionUnit>,
+}
+
+pub struct CompatibilityReport {
+    pub trace_equal_or_bigger: bool,
+}
+
+impl CompatibilityReport {
+    pub fn new() -> CompatibilityReport {
+        CompatibilityReport {
+            trace_equal_or_bigger: false,
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut result_string = String::from("");
+        let new_line = String::from("\n");
+
+        result_string += &(String::from("Trace number is equal or bigger: ") + &self.trace_equal_or_bigger.to_string() + &new_line);
+
+        return result_string;
+    }
+}
+
+impl TrainingUnit {
+    pub fn new(new_base: &DefinitionUnit) -> TrainingUnit {
+        TrainingUnit {
+            base: new_base.clone(),
+
+            training_instances: Vec::new(),
+        }
+    }
+
+    pub fn feed(&mut self, new_instance: DefinitionUnit) {
+        self.training_instances.push(new_instance);
+    }
+
+    pub fn train_w_report(&self) {
+        if (self.training_instances.len() == 0) {
+            panic!("There are no definition units for training. Cancelled.");
+        }
+
+        let mut report = String::from("");
+        let new_line = String::from("\n");
+        report += &(self.base.id.clone() + &new_line);
+        report += &(String::from("*************") + &new_line);
+
+        let data_size = self.base.resolution * self.base.resolution;
+        let base_reinforcement = 1.00 / self.training_instances.len() as f64;
+        report += &(String::from("Data size: ") + &data_size.to_string() + &new_line);
+        report += &(String::from("Reinforcement value: ") + &base_reinforcement.to_string() + &new_line);
+        report += &(String::from("*************") + &new_line);
+        
+        for entry in &self.training_instances {
+            let compatibility_report = Self::report_compatibility(&self.base, entry);
+            
+            report += &(String::from("Reporting: ") + &entry.id.to_string() + &new_line);
+            report += &compatibility_report.to_string();
+            report += &(String::from("*************") + &new_line);
+        }
+
+        fs::write(String::from("debug_report_data.txt"), report);
+    }
+
+    pub fn report_compatibility(base_unit: &DefinitionUnit, entry_unit: &DefinitionUnit) -> CompatibilityReport {
+        let mut reporting = CompatibilityReport::new();
+
+        reporting.trace_equal_or_bigger = entry_unit.traces.len() >= base_unit.traces.len();
+
+        return reporting;
     }
 }
 

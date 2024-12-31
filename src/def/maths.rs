@@ -4,6 +4,7 @@ use std::fmt::Debug;
 
 /// A struct to save a simple 2d vector
 ///
+#[derive(Copy, Clone)]
 pub struct Vector2<T> 
 where
     T: Debug,
@@ -44,13 +45,28 @@ pub fn sum_i64_vectors(input1: &Vector2<i64>, input2: &Vector2<i64>) -> Vector2<
     }
 }
 
-/// Returns the substraction of two u64 vectors
+/// Returns the substraction of two i64 vectors
 ///
 pub fn sub_vectors(input1: &Vector2<i64>, input2: &Vector2<i64>) -> Vector2<i64> {
     Vector2 {
             x: input1.x - input2.x,
             y: input1.y - input2.y,
     }
+}
+
+/// Returns the approximate angle between the two vector
+///
+pub fn cos_between(input1: &Vector2<i64>, input2: &Vector2<i64>) -> f64 {
+    let x1 = input1.x as f64;
+    let x2 = input2.x as f64;
+    let y1 = input1.y as f64;
+    let y2 = input2.y as f64;
+
+    let dot_product = x1 * x2 + y1 * y2;
+    let magnitude_1 = (x1 * x1 + y1 * y1).sqrt();
+    let magnitude_2 = (x2 * x2 + y2 * y2).sqrt();
+
+    return (dot_product / (magnitude_1 * magnitude_2));
 }
 
 /// Returns a scaled vector from the input

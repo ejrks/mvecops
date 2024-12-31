@@ -18,6 +18,7 @@ use naudr::closed_curves::*;
 use naudr::bloat::*;
 
 use beorc::def::DefinitionUnit;
+use beorc::def::TrainingUnit;
 
 // Remove usage of naudr without qualifying the name, common operations are being used and might
 // overlap user api
@@ -288,5 +289,77 @@ mod tests {
         dunit_sample.feed(2, trace_3);
         
         println!("{}", dunit_sample);
+    }
+
+    #[test]
+    #[should_panic]
+    fn empty_tunit_panic() {
+        let mut dunit_sample: DefinitionUnit = DefinitionUnit::new(5);
+        dunit_sample.feed(0, vec![6, 7, 8]);
+        dunit_sample.feed(1, vec![14, 18, 23]);
+        dunit_sample.feed(2, vec![5, 10, 15, 20]);
+
+        let mut tunit_sample: TrainingUnit = TrainingUnit::new(&dunit_sample);
+        tunit_sample.train_w_report();
+    }
+
+    #[test]
+    fn single_training_session() {
+        let mut dunit_sample: DefinitionUnit = DefinitionUnit::new(5);
+        dunit_sample.feed(0, vec![6, 7, 8]);
+        dunit_sample.feed(1, vec![14, 18, 23]);
+        dunit_sample.feed(2, vec![5, 10, 15, 20]);
+
+        let mut tunit_sample: TrainingUnit = TrainingUnit::new(&dunit_sample);
+
+        //  *** Case covers ***
+        // Very similar, but one trace tries to correct a single index
+        // Not even enough traces, discarded
+        // Too many traces, but can adapt based on time stamps, tries to correct another index
+        // Too many traces, attempts to introduce new one
+        // Enough traces, but non of the offsets make sense, discarded
+        // Enough traces, but one of them seems completely different, discarded
+        // Whole system was raised one row, should recognize, tries to correct an index but keeps an old one
+        // Exact same data, feeds it to be static
+        //  *** Case covers ***
+
+        let mut t1_same_data: DefinitionUnit = DefinitionUnit::new(5);
+        t1_same_data.id = String::from("Same data");
+        t1_same_data.feed(0, vec![6, 7, 8]);
+        t1_same_data.feed(1, vec![14, 18, 23]);
+        t1_same_data.feed(2, vec![5, 10, 15, 20]);
+        tunit_sample.training_instances.push(t1_same_data);
+
+        let mut t2_bad_data: DefinitionUnit = DefinitionUnit::new(5);
+        t2_bad_data.id = String::from("Bad data");
+        t2_bad_data.feed(0, vec![11, 16, 21, 22]);
+        t2_bad_data.feed(1, vec![18, 24]);
+        t2_bad_data.feed(2, vec![4, 9, 14]);
+        tunit_sample.training_instances.push(t2_bad_data);
+
+        tunit_sample.train_w_report();
+    }
+
+    #[test]
+    fn cosine_calculation() {
+        let mut vector1: Vector2<i64> = Vector2::new(3, 0);
+        let mut vector2: Vector2<i64> = Vector2::new(4, 1);
+        let mut result = cos_between(&vector1, &vector2);
+        assert_eq!(close_enough(result as f32, 0.97, 0.02), true);
+
+        vector1 = Vector2::new(3, 0);
+        vector2 = Vector2::new(0, 3);
+        result = cos_between(&vector1, &vector2);
+        assert_eq!(close_enough(result as f32, 0.0, 0.02), true);
+
+        vector1 = Vector2::new(3, 0);
+        vector2 = Vector2::new(-2, 0);
+        result = cos_between(&vector1, &vector2);
+        assert_eq!(close_enough(result as f32, -1.0, 0.02), true);
+
+        vector1 = Vector2::new(62, -93);
+        vector2 = Vector2::new(92, -61);
+        result = cos_between(&vector1, &vector2);
+        assert_eq!(close_enough(result as f32, 0.92, 0.02), true);
     }
 }
