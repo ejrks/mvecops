@@ -35,6 +35,35 @@ pub fn sum_vectors(input1: &Vector2<i32>, input2: &Vector2<i32>) -> Vector2<i32>
     }
 }
 
+/// See [sum_vectors].
+///
+pub fn sum_i64_vectors(input1: &Vector2<i64>, input2: &Vector2<i64>) -> Vector2<i64> {
+    Vector2 {
+            x: input1.x + input2.x,
+            y: input1.y + input2.y,
+    }
+}
+
+/// Returns the substraction of two u64 vectors
+///
+pub fn sub_vectors(input1: &Vector2<i64>, input2: &Vector2<i64>) -> Vector2<i64> {
+    Vector2 {
+            x: input1.x - input2.x,
+            y: input1.y - input2.y,
+    }
+}
+
+/// Returns a scaled vector from the input
+///
+pub fn scale_vector(input: &Vector2<i64>, scale_factor: i64) -> Vector2<i64> {
+    let mut new_x: f64 = input.x as f64 / scale_factor as f64;
+    let mut new_y: f64 = input.y as f64 / scale_factor as f64;
+    new_x = new_x.floor();
+    new_y = new_y.floor();
+
+    Vector2::new(new_x as i64, new_y as i64)
+}
+
 /// Get the distance between two indexes within a matrix.
 ///
 pub fn get_index_distance(from: i32, to: i32, row_size: usize) -> f32 {
@@ -112,6 +141,18 @@ pub fn get_index_as_coordinates(input: usize, row_size: usize) -> Vector2<i32> {
 
     let x = internal_input % internal_rs;
     let y = internal_input / internal_rs;
+
+    Vector2 {
+        x,
+        y,
+    }
+}
+
+/// See [get_index_as_coodrinates].
+///
+pub fn get_coordinates_from(index: i64, row_size: i64) -> Vector2<i64> {
+    let x = index % row_size;
+    let y = index / row_size;
 
     Vector2 {
         x,

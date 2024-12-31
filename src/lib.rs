@@ -6,6 +6,7 @@ use std::fs;
 
 pub mod def;
 pub mod naudr;
+pub mod beorc;
 
 use def::vmatrix::*;
 use def::trigonometric::*;
@@ -15,6 +16,8 @@ use naudr::recurrent::*;
 use naudr::operate::*;
 use naudr::closed_curves::*;
 use naudr::bloat::*;
+
+use beorc::def::DefinitionUnit;
 
 // Remove usage of naudr without qualifying the name, common operations are being used and might
 // overlap user api
@@ -250,10 +253,40 @@ mod tests {
     use super::*;
 
     #[test]
-    fn can_get_sample_data() {
-        let file_content = fs::read_to_string(SAMPLE_INPUT_PATH.to_string());
-        for content in file_content {
-            println!("{}", content);
-        }
+    fn trace_values_on_feed() {
+        let mut dunit_sample: DefinitionUnit = DefinitionUnit::new(5);
+        let trace_1: Vec<i64> = vec![6, 7, 8];
+        let trace_2: Vec<i64> = vec![14, 18, 23];
+        let trace_3: Vec<i64> = vec![5, 10, 15, 20];
+        
+        dunit_sample.feed(0, trace_1);
+        dunit_sample.feed(1, trace_2);
+        dunit_sample.feed(2, trace_3);
+
+        assert_eq!(3, dunit_sample.traces[0].indexes.len());
+        assert_eq!((2, 0), (dunit_sample.traces[0].trace.x, dunit_sample.traces[0].trace.y));
+        assert_eq!((1, 0), (dunit_sample.traces[0].average_offset.x, dunit_sample.traces[0].average_offset.y));
+
+        assert_eq!(3, dunit_sample.traces[1].indexes.len());
+        assert_eq!((-1, 2), (dunit_sample.traces[1].trace.x, dunit_sample.traces[1].trace.y));
+        assert_eq!((-1, 1), (dunit_sample.traces[1].average_offset.x, dunit_sample.traces[1].average_offset.y));
+
+        assert_eq!(4, dunit_sample.traces[2].indexes.len());
+        assert_eq!((0, 3), (dunit_sample.traces[2].trace.x, dunit_sample.traces[2].trace.y));
+        assert_eq!((0, 1), (dunit_sample.traces[2].average_offset.x, dunit_sample.traces[2].average_offset.y));
+    }
+
+    #[test]
+    fn print_definition_unit() {
+        let mut dunit_sample: DefinitionUnit = DefinitionUnit::new(5);
+        let trace_1: Vec<i64> = vec![6, 7, 8];
+        let trace_2: Vec<i64> = vec![14, 18, 23];
+        let trace_3: Vec<i64> = vec![5, 10, 15, 20];
+
+        dunit_sample.feed(0, trace_1);
+        dunit_sample.feed(1, trace_2);
+        dunit_sample.feed(2, trace_3);
+        
+        println!("{}", dunit_sample);
     }
 }
