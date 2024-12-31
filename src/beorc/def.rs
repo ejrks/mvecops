@@ -10,6 +10,10 @@ use crate::sum_i64_vectors;
 use crate::sub_vectors;
 use crate::scale_vector;
 
+const ERROR_FACTOR: f64 = 0.2;
+const COS_ERROR: f64 = 0.86;
+const COS_REST: f64 = 0.14;
+
 #[derive(Clone)]
 pub struct Trace {
     pub time_stamp: i64,
@@ -85,13 +89,15 @@ pub struct TrainingUnit {
 }
 
 pub struct CompatibilityReport {
-    pub trace_equal_or_bigger: bool,
+    pub trace_within_range: bool,
+    pub timing_rating: f64,
 }
 
 impl CompatibilityReport {
     pub fn new() -> CompatibilityReport {
         CompatibilityReport {
-            trace_equal_or_bigger: false,
+            trace_within_range: false,
+            timing_rating: 0.0,
         }
     }
 
@@ -99,7 +105,8 @@ impl CompatibilityReport {
         let mut result_string = String::from("");
         let new_line = String::from("\n");
 
-        result_string += &(String::from("Trace number is equal or bigger: ") + &self.trace_equal_or_bigger.to_string() + &new_line);
+        result_string += &(String::from("Trace number in range: ") + &self.trace_within_range.to_string() + &new_line);
+        result_string += &(String::from("Timing rating: ") + &self.timing_rating.to_string() + &new_line);
 
         return result_string;
     }
@@ -129,9 +136,11 @@ impl TrainingUnit {
         report += &(String::from("*************") + &new_line);
 
         let data_size = self.base.resolution * self.base.resolution;
+        let error_resolution = self.base.resolution as f64 * ERROR_FACTOR;
         let base_reinforcement = 1.00 / self.training_instances.len() as f64;
         report += &(String::from("Data size: ") + &data_size.to_string() + &new_line);
         report += &(String::from("Reinforcement value: ") + &base_reinforcement.to_string() + &new_line);
+        report += &(String::from("Error resolution: ") + &error_resolution.to_string() + &new_line);
         report += &(String::from("*************") + &new_line);
         
         for entry in &self.training_instances {
@@ -146,9 +155,51 @@ impl TrainingUnit {
     }
 
     pub fn report_compatibility(base_unit: &DefinitionUnit, entry_unit: &DefinitionUnit) -> CompatibilityReport {
+        let error_resolution = base_unit.resolution as f64 * ERROR_FACTOR;
+
         let mut reporting = CompatibilityReport::new();
 
-        reporting.trace_equal_or_bigger = entry_unit.traces.len() >= base_unit.traces.len();
+        let maximum_index_entry = entry_unit.traces.len();
+        let maximum_index_base = base_unit.traces.len();
+
+        reporting.trace_within_range = maximum_index_entry  >= maximum_index_base &&
+                                       maximum_index_entry  <= maximum_index_base * 2;
+        
+        // Here extra traces would need to be coupled
+        // Concatenate ending of one with beggining of the other
+
+        let mut entry_index_check = 0;
+        let timing_base = 1.00 / maximum_index_entry as f64;
+        let mut timing_value = 0.0;
+        while (entry_index_check < maximum_index_entry && entry_index_check < maximum_index_base) {
+            let ts_base = base_unit.traces[entry_index_check].time_stamp as f64;
+            let ts_entr = entry_unit.traces[entry_index_check].time_stamp as f64;
+
+            let timing_difference = (ts_base - ts_entr).abs();
+            if  timing_difference < error_resolution {                
+                timing_value += timing_base * ((error_resolution - timing_difference) / error_resolution);
+            }
+
+            entry_index_check += 1;
+        }
+
+        reporting.timing_rating = timing_value;
+
+        entry_index_check = 0;
+        timing_value = 0.0;
+        while (entry_index_check < maximum_index_entry && entry_index_check < maximum_index_base) {
+            let trace_base = base_unit.traces[entry_index_check].trace;
+            let trace_entr = entry_unit.traces[entry_index_check].trace;
+
+            let cosine_value = cos_between(&trace_base, &trace_entr);
+            if  cosine_value > COS_ERROR {                
+                timing_value += timing_base * ((1.0 - cosine_value) / COS_REST);
+            }
+
+            entry_index_check += 1;
+        }
+
+        reporting.timing_rating = timing_value;
 
         return reporting;
     }

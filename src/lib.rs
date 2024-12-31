@@ -337,6 +337,20 @@ mod tests {
         t2_bad_data.feed(2, vec![4, 9, 14]);
         tunit_sample.training_instances.push(t2_bad_data);
 
+        let mut t3_same_data_time1: DefinitionUnit = DefinitionUnit::new(5);
+        t3_same_data_time1.id = String::from("Same data time + 1");
+        t3_same_data_time1.feed(0, vec![11, 16, 21, 22]);
+        t3_same_data_time1.feed(1, vec![18, 24]);
+        t3_same_data_time1.feed(3, vec![4, 9, 14]);
+        tunit_sample.training_instances.push(t3_same_data_time1);
+
+        let mut t3_same_bad_timing: DefinitionUnit = DefinitionUnit::new(5);
+        t3_same_bad_timing.id = String::from("Same data bad timing");
+        t3_same_bad_timing.feed(6, vec![6, 7, 8]);
+        t3_same_bad_timing.feed(3, vec![14, 18, 23]);
+        t3_same_bad_timing.feed(7, vec![5, 10, 15, 20]);
+        tunit_sample.training_instances.push(t3_same_bad_timing);
+
         tunit_sample.train_w_report();
     }
 
