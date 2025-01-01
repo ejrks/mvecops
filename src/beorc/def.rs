@@ -235,20 +235,20 @@ impl TrainingUnit {
                                        maximum_index_entry  <= maximum_index_base * 2;
         
         // Here extra traces would need to be coupled
-
-        let mut reconstructed_instance: DefinitionUnit = base_unit.clone();
+        let mut reconstructed_instance: DefinitionUnit = entry_unit.clone();
         if reporting.trace_within_range && maximum_index_entry != maximum_index_base {
-            reconstructed_instance = reconstruct_traces(&base_unit, &entry_unit, &mut reporting);
+            let reconstruction_result = reconstruct_traces(&base_unit, &entry_unit, &mut reporting);
+            if reconstruction_result.traces.len() == base_unit.traces.len() {
+                reconstructed_instance = reconstruction_result;
+            }
         }
 
-        // Concatenate ending of one with beggining of the other
-
         let mut entry_index_check = 0;
-        let timing_base = 1.00 / maximum_index_entry as f64;
+        let timing_base = 1.00 / maximum_index_base as f64;
         let mut timing_value = 0.0;
         while (entry_index_check < maximum_index_entry && entry_index_check < maximum_index_base) {
             let ts_base = base_unit.traces[entry_index_check].time_stamp as f64;
-            let ts_entr = entry_unit.traces[entry_index_check].time_stamp as f64;
+            let ts_entr = reconstructed_instance.traces[entry_index_check].time_stamp as f64;
 
             let timing_difference = (ts_base - ts_entr).abs();
             if  timing_difference < error_resolution {                
@@ -264,7 +264,7 @@ impl TrainingUnit {
         timing_value = 0.0;
         while (entry_index_check < maximum_index_entry && entry_index_check < maximum_index_base) {
             let trace_base = base_unit.traces[entry_index_check].trace;
-            let trace_entr = entry_unit.traces[entry_index_check].trace;
+            let trace_entr = reconstructed_instance.traces[entry_index_check].trace;
 
             let cosine_value = cos_between(&trace_base, &trace_entr);
             if  cosine_value > COS_ERROR {                
@@ -281,7 +281,7 @@ impl TrainingUnit {
         timing_value = 0.0;
         while (entry_index_check < maximum_index_entry && entry_index_check < maximum_index_base) {
             let trace_base = base_unit.traces[entry_index_check].average_offset;
-            let trace_entr = entry_unit.traces[entry_index_check].average_offset;
+            let trace_entr = reconstructed_instance.traces[entry_index_check].average_offset;
 
             let cosine_value = cos_between(&trace_base, &trace_entr);
             if  cosine_value > COS_ERROR {                
