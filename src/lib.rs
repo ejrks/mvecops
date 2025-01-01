@@ -382,6 +382,14 @@ mod tests {
         t7_split.feed(5, vec![15, 20]);
         tunit_sample.training_instances.push(t7_split);
 
+        let mut t8_hsplit: DefinitionUnit = DefinitionUnit::new(5);
+        t8_hsplit.id = String::from("Split times - 1");
+        t8_hsplit.feed(0, vec![6, 7, 8]);
+        t8_hsplit.feed(1, vec![14]);
+        t8_hsplit.feed(2, vec![18, 23]);
+        t8_hsplit.feed(3, vec![5, 10, 15, 20]);
+        tunit_sample.training_instances.push(t8_hsplit);
+
         tunit_sample.train_w_report();
     }
 

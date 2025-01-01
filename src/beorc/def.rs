@@ -319,8 +319,8 @@ fn reconstruct_traces(base_unit: &DefinitionUnit, entry_unit: &DefinitionUnit, r
 
     let mut canceled_internal = false;
 
-    let mut first_entry: &Trace = &Trace::empty();
-    let mut second_entry: &Trace = &Trace::empty();
+    let mut first_entry: Trace = Trace::empty();
+    let mut second_entry: Trace = Trace::empty();
 
     let mut combined_vector: Vec<i64> = Vec::new();
     let mut combined_entry: Trace = Trace::empty();
@@ -336,7 +336,7 @@ fn reconstruct_traces(base_unit: &DefinitionUnit, entry_unit: &DefinitionUnit, r
 
     let mut second_fetched: bool = false;
     while index_for_entry < maximum_entry_index {
-        if index_for_entry >= maximum_entry_index {
+        if index_for_entry >= maximum_entry_index || index_for_base >= maximum_base_index {
             canceled_internal = true;
         }
 
@@ -345,102 +345,129 @@ fn reconstruct_traces(base_unit: &DefinitionUnit, entry_unit: &DefinitionUnit, r
 
             compare_against = &base_unit.traces[index_for_base];
 
-            first_entry = &entry_unit.traces[index_for_entry];
+            first_entry = entry_unit.traces[index_for_entry].clone();
             if (index_for_entry + 1) < maximum_entry_index {
-                second_entry = &entry_unit.traces[index_for_entry + 1];
+                second_entry = entry_unit.traces[index_for_entry + 1].clone();
                 second_fetched = true;
             }
-            else {
-                if index_for_base < maximum_base_index {
-                    canceled_internal;
-                    break;
-                }
-            }
+            // else {
+                // if index_for_base < maximum_base_index {
+                    // canceled_internal;
+                    // break;
+                // }
+            // }
 
             if (second_fetched) {
                 combined_vector = first_entry.indexes.iter().chain(second_entry.indexes.iter()).cloned().collect();
 
                 combined_entry = Trace::new(0, combined_vector, compare_against.resolution);
-            }
 
-            traces_difference_1 = cos_between(&compare_against.trace, &first_entry.trace);
-            offset_difference_1 = cos_between(&compare_against.average_offset, &first_entry.average_offset);
-            elements_difference_1 = (compare_against.indexes.len() as i64 - first_entry.indexes.len() as i64).abs();
+                traces_difference_1 = cos_between(&compare_against.trace, &first_entry.trace);
+                offset_difference_1 = cos_between(&compare_against.average_offset, &first_entry.average_offset);
+                elements_difference_1 = (compare_against.indexes.len() as i64 - first_entry.indexes.len() as i64).abs();
 
-            traces_difference_2 = cos_between(&compare_against.trace, &combined_entry.trace);
-            offset_difference_2 = cos_between(&compare_against.average_offset, &combined_entry.average_offset);
-            elements_difference_2 = (compare_against.indexes.len() as i64 - combined_entry.indexes.len() as i64).abs();
+                traces_difference_2 = cos_between(&compare_against.trace, &combined_entry.trace);
+                offset_difference_2 = cos_between(&compare_against.average_offset, &combined_entry.average_offset);
+                elements_difference_2 = (compare_against.indexes.len() as i64 - combined_entry.indexes.len() as i64).abs();
             
-            // If all are valid, select the one with the best elements match
-            if traces_difference_1 > COS_ERROR && offset_difference_1 > COS_ERROR &&
-               traces_difference_2 > COS_ERROR && offset_difference_2 > COS_ERROR {
-                if elements_difference_1 < elements_difference_2 {
-                    result.traces.push(first_entry.clone());
-                    reporting.reconstruction_traces.push(ReconstructionReport::new(compare_against.indexes.clone(), first_entry.indexes.clone(), true));
+                // If all are valid, select the one with the best elements match
+                if traces_difference_1 > COS_ERROR && offset_difference_1 > COS_ERROR &&
+                   traces_difference_2 > COS_ERROR && offset_difference_2 > COS_ERROR {
+                    if elements_difference_1 < elements_difference_2 {
+                        first_entry.time_stamp = compare_against.time_stamp;
+                        reporting.reconstruction_traces.push(ReconstructionReport::new(compare_against.indexes.clone(), first_entry.indexes.clone(), true));
+                        result.traces.push(first_entry);
 
+                        index_for_base += 1;
+                        break;
+                    }
+                    else {
+                        combined_entry.time_stamp = compare_against.time_stamp;
+                        reporting.reconstruction_traces.push(ReconstructionReport::new(compare_against.indexes.clone(), combined_entry.indexes.clone(), true));
+                        result.traces.push(combined_entry);
+
+                        index_for_entry += 1;
+                        index_for_base += 1;
+                        break;
+                    }
+                }
+
+                // If not, it may try to take the combined match right away if the number of elements are closer,
+                // but only if its errors are within the margin
+                if elements_difference_2 < elements_difference_1 {
+                    if traces_difference_2 > COS_ERROR && offset_difference_2 > COS_ERROR {
+                        combined_entry.time_stamp = compare_against.time_stamp;
+                        reporting.reconstruction_traces.push(ReconstructionReport::new(compare_against.indexes.clone(), combined_entry.indexes.clone(), true));
+                        result.traces.push(combined_entry);
+
+                        index_for_entry += 1;
+                        index_for_base += 1;
+                        break;
+                    }
+                }
+
+                // Finally, it may try to use the best match based on the errors
+                let mut best_match_new = 0;
+                if traces_difference_2 > traces_difference_1 {
+                    best_match_new += 1;
+                }
+                else {
+                    best_match_new -= 1;
+                }
+
+                if offset_difference_2 > offset_difference_1 {
+                    best_match_new += 1;
+                }
+                else {
+                    best_match_new -= 1;
+                }
+
+                if elements_difference_2 < elements_difference_1 {
+                    best_match_new += 1;
+                }
+                else {
+                    best_match_new -= 1;
+                }
+
+                if best_match_new > 0 {
+                    let accepted: bool = traces_difference_2 > COS_ERROR && offset_difference_2 > COS_ERROR;
+                    combined_entry.time_stamp = compare_against.time_stamp;
+                    reporting.reconstruction_traces.push(ReconstructionReport::new(compare_against.indexes.clone(), combined_entry.indexes.clone(), accepted));
+                    result.traces.push(combined_entry);
+
+                    index_for_entry += 1;
                     index_for_base += 1;
                     break;
                 }
                 else {
-                    result.traces.push(combined_entry.clone());
-                    reporting.reconstruction_traces.push(ReconstructionReport::new(compare_against.indexes.clone(), combined_entry.indexes.clone(), true));
+                    let accepted: bool = traces_difference_1 > COS_ERROR && offset_difference_1 > COS_ERROR;
+                    first_entry.time_stamp = compare_against.time_stamp;
+                    reporting.reconstruction_traces.push(ReconstructionReport::new(compare_against.indexes.clone(), first_entry.indexes.clone(), accepted));
+                    result.traces.push(first_entry);
 
-                    index_for_entry += 1;
                     index_for_base += 1;
                     break;
                 }
             }
+            else {  // No second entry fetched
+                traces_difference_1 = cos_between(&compare_against.trace, &first_entry.trace);
+                offset_difference_1 = cos_between(&compare_against.average_offset, &first_entry.average_offset);
+                elements_difference_1 = (compare_against.indexes.len() as i64 - first_entry.indexes.len() as i64).abs();
 
-            // If not, it may try to take the combined match right away if the number of elements are closer,
-            // but only if its errors are within the margin
-            if elements_difference_2 < elements_difference_1 {
-                if traces_difference_2 > COS_ERROR && offset_difference_2 > COS_ERROR {
-                    result.traces.push(combined_entry.clone());
-                    reporting.reconstruction_traces.push(ReconstructionReport::new(compare_against.indexes.clone(), combined_entry.indexes.clone(), true));
-
-                    index_for_entry += 1;
-                    index_for_base += 1;
-                    break;
+                let mut match_check = 0;
+                if traces_difference_1 > COS_ERROR {
+                    match_check += 1;
                 }
-            }
+                if offset_difference_1 > COS_ERROR {
+                    match_check += 1;
+                }
+                if (elements_difference_1 as f64) < (ERROR_FACTOR * compare_against.resolution as f64) {
+                    match_check += 1;
+                }
 
-            // Finally, it may try to use the best match based on the errors
-            let mut best_match_new = 0;
-            if traces_difference_2 > traces_difference_1 {
-                best_match_new += 1;
-            }
-            else {
-                best_match_new -= 1;
-            }
-
-            if offset_difference_2 > offset_difference_1 {
-                best_match_new += 1;
-            }
-            else {
-                best_match_new -= 1;
-            }
-
-            if elements_difference_2 < elements_difference_1 {
-                best_match_new += 1;
-            }
-            else {
-                best_match_new -= 1;
-            }
-
-            if best_match_new > 0 {
-                let accepted: bool = traces_difference_2 > COS_ERROR && offset_difference_2 > COS_ERROR;
-                result.traces.push(combined_entry.clone());
-                reporting.reconstruction_traces.push(ReconstructionReport::new(compare_against.indexes.clone(), combined_entry.indexes.clone(), accepted));
-
-                index_for_entry += 1;
-                index_for_base += 1;
-                break;
-            }
-            else {
-                let accepted: bool = traces_difference_1 > COS_ERROR && offset_difference_1 > COS_ERROR;
-                result.traces.push(first_entry.clone());
-                reporting.reconstruction_traces.push(ReconstructionReport::new(compare_against.indexes.clone(), first_entry.indexes.clone(), accepted));
-
+                first_entry.time_stamp = compare_against.time_stamp;
+                reporting.reconstruction_traces.push(ReconstructionReport::new(compare_against.indexes.clone(), first_entry.indexes.clone(), match_check > 1));
+                result.traces.push(first_entry);
                 index_for_base += 1;
                 break;
             }
