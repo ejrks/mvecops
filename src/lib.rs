@@ -372,6 +372,16 @@ mod tests {
         t6_allup.feed(2, vec![0, 5, 10, 15]);
         tunit_sample.training_instances.push(t6_allup);
 
+        let mut t7_split: DefinitionUnit = DefinitionUnit::new(5);
+        t7_split.id = String::from("Split times");
+        t7_split.feed(0, vec![6, 7]);
+        t7_split.feed(1, vec![8]);
+        t7_split.feed(2, vec![14]);
+        t7_split.feed(3, vec![18, 23]);
+        t7_split.feed(4, vec![5, 10]);
+        t7_split.feed(5, vec![15, 20]);
+        tunit_sample.training_instances.push(t7_split);
+
         tunit_sample.train_w_report();
     }
 
