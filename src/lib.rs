@@ -299,7 +299,7 @@ mod tests {
         dunit_sample.feed(1, vec![14, 18, 23]);
         dunit_sample.feed(2, vec![5, 10, 15, 20]);
 
-        let mut tunit_sample: TrainingUnit = TrainingUnit::new(&dunit_sample);
+        let mut tunit_sample: TrainingUnit = TrainingUnit::new(&dunit_sample, 0.5);
         tunit_sample.train_w_report();
     }
 
@@ -310,17 +310,17 @@ mod tests {
         dunit_sample.feed(1, vec![14, 18, 23]);
         dunit_sample.feed(2, vec![5, 10, 15, 20]);
 
-        let mut tunit_sample: TrainingUnit = TrainingUnit::new(&dunit_sample);
+        let mut tunit_sample: TrainingUnit = TrainingUnit::new(&dunit_sample, 0.5);
 
         //  *** Case covers ***
-        // Very similar, but one trace tries to correct a single index
-        // Not even enough traces, discarded
+        //  + Very similar, but one trace tries to correct a single index
+        //  + Not even enough traces, discarded
         // Too many traces, but can adapt based on time stamps, tries to correct another index
         // Too many traces, attempts to introduce new one
-        // Enough traces, but non of the offsets make sense, discarded
-        // Enough traces, but one of them seems completely different, discarded
+        //  + Enough traces, but non of the offsets make sense, discarded
+        //  + Enough traces, but one of them seems completely different, discarded
         // Whole system was raised one row, should recognize, tries to correct an index but keeps an old one
-        // Exact same data, feeds it to be static
+        //  + Exact same data, feeds it to be static
         //  *** Case covers ***
 
         let mut t1_same_data: DefinitionUnit = DefinitionUnit::new(5);
@@ -334,14 +334,14 @@ mod tests {
         t2_bad_data.id = String::from("Bad data");
         t2_bad_data.feed(0, vec![11, 16, 21, 22]);
         t2_bad_data.feed(1, vec![18, 24]);
-        t2_bad_data.feed(2, vec![4, 9, 14]);
+        t2_bad_data.feed(2, vec![14, 9, 4]);
         tunit_sample.training_instances.push(t2_bad_data);
 
         let mut t3_same_data_time1: DefinitionUnit = DefinitionUnit::new(5);
         t3_same_data_time1.id = String::from("Same data time + 1");
-        t3_same_data_time1.feed(0, vec![11, 16, 21, 22]);
-        t3_same_data_time1.feed(1, vec![18, 24]);
-        t3_same_data_time1.feed(3, vec![4, 9, 14]);
+        t3_same_data_time1.feed(0, vec![6, 7, 8]);
+        t3_same_data_time1.feed(1, vec![14, 18, 23]);
+        t3_same_data_time1.feed(3, vec![5, 10, 15, 20]);
         tunit_sample.training_instances.push(t3_same_data_time1);
 
         let mut t3_same_bad_timing: DefinitionUnit = DefinitionUnit::new(5);
@@ -350,6 +350,27 @@ mod tests {
         t3_same_bad_timing.feed(3, vec![14, 18, 23]);
         t3_same_bad_timing.feed(7, vec![5, 10, 15, 20]);
         tunit_sample.training_instances.push(t3_same_bad_timing);
+
+        let mut t4_correction1: DefinitionUnit = DefinitionUnit::new(5);
+        t4_correction1.id = String::from("Correction data 1 off");
+        t4_correction1.feed(0, vec![6, 7, 8, 3]);
+        t4_correction1.feed(1, vec![14, 18, 23]);
+        t4_correction1.feed(2, vec![5, 10, 15, 20]);
+        tunit_sample.training_instances.push(t4_correction1);
+
+        let mut t5_broken_offset: DefinitionUnit = DefinitionUnit::new(5);
+        t5_broken_offset.id = String::from("Good trace bad ave");
+        t5_broken_offset.feed(0, vec![6, 11, 16, 12, 18]);
+        t5_broken_offset.feed(1, vec![14, 18, 19, 24, 23]);
+        t5_broken_offset.feed(2, vec![0, 5, 10, 15, 20]);
+        tunit_sample.training_instances.push(t5_broken_offset);
+
+        let mut t6_allup: DefinitionUnit = DefinitionUnit::new(5);
+        t6_allup.id = String::from("All up");
+        t6_allup.feed(0, vec![1, 2, 3]);
+        t6_allup.feed(1, vec![9, 13, 18]);
+        t6_allup.feed(2, vec![0, 5, 10, 15]);
+        tunit_sample.training_instances.push(t6_allup);
 
         tunit_sample.train_w_report();
     }
