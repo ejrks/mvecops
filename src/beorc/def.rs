@@ -143,6 +143,8 @@ pub struct CompatibilityReport {
     pub diagnosis: bool,
 
     reconstruction_traces: Vec<ReconstructionReport>,
+
+    reconstructed_instance: DefinitionUnit,
 }
 
 impl CompatibilityReport {
@@ -156,6 +158,8 @@ impl CompatibilityReport {
             diagnosis: true,
 
             reconstruction_traces: Vec::new(),
+
+            reconstructed_instance: DefinitionUnit::new(0),
         }
     }
 
@@ -194,7 +198,7 @@ impl TrainingUnit {
         self.training_instances.push(new_instance);
     }
 
-    pub fn train_w_report(&self) {
+    pub fn train_w_report(&mut self) {
         if (self.training_instances.len() == 0) {
             panic!("There are no definition units for training. Cancelled.");
         }
@@ -204,20 +208,85 @@ impl TrainingUnit {
         report += &(self.base.id.clone() + &new_line);
         report += &(String::from("*************") + &new_line);
 
-        let data_size = self.base.resolution * self.base.resolution;
+        let data_size = (self.base.resolution * self.base.resolution) as usize;
         let error_resolution = self.base.resolution as f64 * ERROR_FACTOR;
-        let base_reinforcement = 1.00 / self.training_instances.len() as f64;
+        let mut base_reinforcement = 1.00 / self.training_instances.len() as f64;
         report += &(String::from("Data size: ") + &data_size.to_string() + &new_line);
         report += &(String::from("Reinforcement value: ") + &base_reinforcement.to_string() + &new_line);
         report += &(String::from("Error resolution: ") + &error_resolution.to_string() + &new_line);
         report += &(String::from("*************") + &new_line);
         
-        for entry in &self.training_instances {
+        let mut valid_instances: Vec<usize> = Vec::new();
+        let mut instance_index: usize = 0;
+        for entry in &mut self.training_instances {
             let compatibility_report = Self::report_compatibility(&self.base, entry, self.error_margin);
             
             report += &(String::from("Reporting: ") + &entry.id.to_string() + &new_line);
             report += &compatibility_report.to_string();
+
+            *entry = compatibility_report.reconstructed_instance;
+
             report += &(String::from("*************") + &new_line);
+
+            if compatibility_report.diagnosis {
+                valid_instances.push(instance_index);
+            }
+            instance_index += 1;
+        }
+
+        base_reinforcement = 1.00 / valid_instances.len() as f64;
+        let br2 = base_reinforcement * 2.0;
+
+        let mut content_votes: Vec<f64> = vec![0.0; data_size];
+        let mut vanguard_votes: Vec<f64> = vec![0.0; data_size];
+        let mut rearguard_votes: Vec<f64> = vec![0.0; data_size];
+
+        let mut trace_index = 0;
+        let max_trace_index = self.base.traces.len();
+
+        let mut base_trace: &Trace = &Trace::empty();
+        let mut entry_trace: &Trace = &Trace::empty();
+        while trace_index < max_trace_index {
+            base_trace = &self.base.traces[trace_index];
+            
+            for entry in &mut content_votes {
+                *entry = 0.0;
+            }
+            for entry in &mut vanguard_votes {
+                *entry = 0.0;
+            }
+            for entry in &mut rearguard_votes {
+                *entry = 0.0;
+            }
+
+            for index in &base_trace.indexes {
+                content_votes[*index as usize] = 1.0;
+            }
+            vanguard_votes[base_trace.indexes[0] as usize] = 1.0;
+            rearguard_votes[base_trace.indexes[base_trace.indexes.len() - 1] as usize] = 1.0;
+
+            for element in &valid_instances {
+                entry_trace = &self.training_instances[*element].traces[trace_index];
+
+                for x in 0..data_size {
+                    content_votes[x] -= base_reinforcement;
+                    vanguard_votes[x] -= base_reinforcement;
+                    rearguard_votes[x] -= base_reinforcement;
+                }
+
+                for index in &entry_trace.indexes {
+                    content_votes[*index as usize] += br2;
+                }
+                vanguard_votes[entry_trace.indexes[0] as usize] += br2;
+                rearguard_votes[entry_trace.indexes[entry_trace.indexes.len() - 1] as usize] += br2;
+         
+            }
+
+            report += &(String::from("Training trace: ") + &self.base.id.to_string());
+            report += &report_votes(&content_votes, &vanguard_votes, &rearguard_votes, self.base.resolution);
+            report += &(String::from("*************") + &new_line);
+
+            trace_index += 1;
         }
 
         fs::write(String::from("debug_report_data.txt"), report);
@@ -304,8 +373,42 @@ impl TrainingUnit {
             reporting.diagnosis = false;
         }
 
+        reporting.reconstructed_instance = reconstructed_instance;
+
         return reporting;
     }
+}
+
+fn report_votes(content: &Vec<f64>, vanguard: &Vec<f64>, rearguard: &Vec<f64>, resolution: i64) -> String {
+    let mut result_string = String::from("");
+    let new_line = String::from("\n");
+
+    result_string += &new_line;
+    result_string += &(String::from("#########CONTENT##########"));
+    result_string += &(single_vector_report(content, resolution));
+    result_string += &(String::from("#########FIRST############"));
+    result_string += &(single_vector_report(vanguard, resolution));
+    result_string += &(String::from("#########LAST#############"));
+    result_string += &(single_vector_report(rearguard, resolution));
+
+    return result_string;
+}
+
+fn single_vector_report(content: &Vec<f64>, resolution: i64) -> String {
+    let mut result_string = String::from("");
+    let new_line = String::from("\n");
+
+    let resolution_as_index = resolution as usize;
+
+    result_string += &(new_line);
+    for x in 0..resolution_as_index {
+        for y in 0..resolution_as_index {
+            result_string += &(format!("{:>5.2}", content[y + x * resolution_as_index]));
+            result_string += &(String::from(" "));
+        }
+        result_string += &(new_line);
+    }
+    return result_string;
 }
 
 // It's quite possible that the inner loop doesn't even need to be a loop
