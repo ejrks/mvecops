@@ -198,6 +198,24 @@ pub fn close_enough(test_value: f32, close_to: f32, by_margin: f32) -> bool {
     return lower_margin < test_value && test_value < upper_margin;
 }
 
+/// See [close_enough].
+///
+pub fn close_enough_f64(test_value: f64, close_to: f64, by_margin: f64) -> bool {
+    if test_value == close_to {
+        return true;
+    }
+
+    let mut absolute_margin = by_margin;
+    if by_margin < 0.0 {
+        absolute_margin *= -1.0;
+    }  
+
+    let lower_margin = close_to - absolute_margin;
+    let upper_margin = close_to + absolute_margin;
+
+    return lower_margin < test_value && test_value < upper_margin;
+}
+
 /// Set two vectors to be perpendicular to another couple vectors that are antiparallel
 ///
 pub fn orthogonal_from_antiparallel(input1: &Vector2<i32>, input2: &Vector2<i32>, orthogonal1: &mut Vector2<i32>, orthogonal2: &mut Vector2<i32>) {

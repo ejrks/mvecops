@@ -10,6 +10,7 @@ use crate::sum_i64_vectors;
 use crate::sub_vectors;
 use crate::scale_vector;
 use crate::cos_between;
+use crate::close_enough_f64;
 
 const ERROR_FACTOR: f64 = 0.2;
 const COS_ERROR: f64 = 0.86;
@@ -203,6 +204,9 @@ impl TrainingUnit {
             panic!("There are no definition units for training. Cancelled.");
         }
 
+        let mut new_definition = DefinitionUnit::new(self.base.resolution);
+        new_definition.id = self.base.id.clone();
+
         let mut report = String::from("");
         let new_line = String::from("\n");
         report += &(self.base.id.clone() + &new_line);
@@ -286,10 +290,103 @@ impl TrainingUnit {
             report += &report_votes(&content_votes, &vanguard_votes, &rearguard_votes, self.base.resolution);
             report += &(String::from("*************") + &new_line);
 
+            let trained_trace: Trace = Self::train_trace_with(base_trace, &content_votes, &vanguard_votes, &rearguard_votes);
+
+            new_definition.traces.push(trained_trace);
+
             trace_index += 1;
         }
 
+        report += &(String::from("Training complete... Old object is: ") + &new_line);
+        report += &(format!("{}", self.base));
+        report += &(String::from(".............") + &new_line);
+        report += &(String::from("...New object is: ") + &new_line);
+        report += &(format!("{}", new_definition));
+        report += &(String::from(".............") + &new_line);
+        report += &(String::from("Remember: Objects are not overwriten anywhere. Hang on the output. "));
+
         fs::write(String::from("debug_report_data.txt"), report);
+    }
+
+    fn train_trace_with(base_trace: &Trace, content: &Vec<f64>, vanguard: &Vec<f64>, rearguard: &Vec<f64>) -> Trace {
+        let mut new_content: Vec<i64> = Vec::new();
+
+        let mut index_check: usize = 0;
+        let maximum_index = content.len();
+        while index_check < maximum_index {
+            if content[index_check] > 0.0 {
+                new_content.push(index_check as i64);
+            }
+            index_check += 1;
+        }
+
+        index_check = 0;
+        let mut current_value: f64 = -1.0;
+        let mut greatest_value_found: f64 = -1.0;
+        let mut index_greatest_value: usize = 0;
+        let mut two_greatest_values: bool = false;
+        let mut current_guard: i64 = base_trace.indexes[0];
+
+        while index_check < maximum_index {
+            current_value = vanguard[index_check];
+            if close_enough_f64(current_value, greatest_value_found, 0.01) {
+                two_greatest_values = true;
+            }
+            if current_value > greatest_value_found {
+                greatest_value_found = current_value;
+                index_greatest_value = index_check;
+                two_greatest_values = false;
+            }
+
+            index_check += 1;
+        }
+
+        let mut new_vanguard = index_greatest_value as i64;
+        if two_greatest_values {
+            new_vanguard = current_guard;
+        }
+
+        index_check = 0;
+        let mut current_value: f64 = -1.0;
+        let mut greatest_value_found: f64 = -1.0;
+        let mut index_greatest_value: usize = 0;
+        let mut two_greatest_values: bool = false;
+        let mut current_guard: i64 = base_trace.indexes[base_trace.indexes.len() - 1];
+
+        while index_check < maximum_index {
+            current_value = rearguard[index_check];
+            if close_enough_f64(current_value, greatest_value_found, 0.01) {
+                two_greatest_values = true;
+            }
+            if current_value > greatest_value_found {
+                greatest_value_found = current_value;
+                index_greatest_value = index_check;
+                two_greatest_values = false;
+            }
+
+            index_check += 1;
+        }
+
+        let mut new_rearguard = index_greatest_value as i64;
+        if two_greatest_values {
+            new_rearguard = current_guard;
+        }
+
+        return Self::combine_into_trace(new_content, new_vanguard, new_rearguard, &base_trace.time_stamp, &base_trace.resolution);
+    }
+
+    fn combine_into_trace(content: Vec<i64>, vanguard: i64, rearguard: i64, time_stamp: &i64, resolution: &i64) -> Trace{
+        let mut new_trace_data = vec![vanguard.clone()];
+        for entry in content {
+            if !new_trace_data.contains(&entry) && entry != rearguard {
+                new_trace_data.push(entry);
+            }
+        }
+        new_trace_data.push(rearguard);
+
+        
+
+        Trace::new(*time_stamp, new_trace_data, *resolution)
     }
 
     pub fn report_compatibility(base_unit: &DefinitionUnit, entry_unit: &DefinitionUnit, error_margin: f64) -> CompatibilityReport {
