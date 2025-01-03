@@ -315,11 +315,11 @@ mod tests {
         //  *** Case covers ***
         //  + Very similar, but one trace tries to correct a single index
         //  + Not even enough traces, discarded
-        // Too many traces, but can adapt based on time stamps, tries to correct another index
-        // Too many traces, attempts to introduce new one
+        //  + Too many traces, but can adapt based on time stamps, tries to correct another index
+        // (MISSING THIS ONE, IT IS IMPORTANT) Too many traces, attempts to introduce new one
         //  + Enough traces, but non of the offsets make sense, discarded
         //  + Enough traces, but one of them seems completely different, discarded
-        // Whole system was raised one row, should recognize, tries to correct an index but keeps an old one
+        //  + Whole system was raised one row, should recognize, tries to correct an index but keeps an old one
         //  + Exact same data, feeds it to be static
         //  *** Case covers ***
 

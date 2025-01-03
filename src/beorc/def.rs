@@ -195,6 +195,16 @@ impl TrainingUnit {
         }
     }
 
+    pub fn empty(error_margin: f64) -> TrainingUnit {
+        TrainingUnit {
+            base: DefinitionUnit::new(0),
+
+            training_instances: Vec::new(),
+
+            error_margin,
+        }
+    }
+
     pub fn feed(&mut self, new_instance: DefinitionUnit) {
         self.training_instances.push(new_instance);
     }
