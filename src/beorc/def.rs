@@ -479,6 +479,9 @@ impl TrainingUnit {
         if reporting.offsets_similarity < error_margin {
             reporting.diagnosis = false;
         }
+        if !reporting.trace_within_range {
+            reporting.diagnosis = false;
+        }
 
         reporting.reconstructed_instance = reconstructed_instance;
 
@@ -704,9 +707,17 @@ impl fmt::Display for DefinitionUnit {
 
         let mut last_painted_index = 0;
         let last_possible_index = self.resolution * self.resolution;
+
+        let longest_element = last_possible_index.to_string();
+        let longest_element_number = longest_element.chars().count();
+        let mut asterisk_string = String::from("");
+        for x in 0..longest_element_number {
+            asterisk_string += &(String::from("*"));
+        }
+
         for value in &all_values {
             while (last_painted_index < *value && last_painted_index < last_possible_index) {
-                output += &String::from("**");
+                output += &asterisk_string;
                 
                 last_painted_index += 1;
                 if (last_painted_index % self.resolution == 0) {
@@ -714,10 +725,7 @@ impl fmt::Display for DefinitionUnit {
                 }
             }
             if (last_painted_index == *value) {
-                output += &value.to_string();
-                if (*value < 10) {
-                    output += &String::from(" ");
-                }
+                output += &(format!("{:1$}", value, longest_element_number));
             }
             last_painted_index += 1;
             if (last_painted_index % self.resolution == 0) {
@@ -726,7 +734,7 @@ impl fmt::Display for DefinitionUnit {
         }
 
         while (last_painted_index < last_possible_index) {
-            output += &String::from("**");
+            output += &asterisk_string;
                 
             last_painted_index += 1;
             if (last_painted_index % self.resolution == 0) {
