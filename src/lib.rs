@@ -19,6 +19,7 @@ use naudr::bloat::*;
 
 use beorc::def::DefinitionUnit;
 use beorc::def::TrainingUnit;
+use beorc::database::LivingDataUnit;
 
 // Remove usage of naudr without qualifying the name, common operations are being used and might
 // overlap user api
@@ -249,6 +250,9 @@ const SAMPLE_INPUT_PATH: &str = "samplekanji.txt";
 const SAMPLE_OUTPUT_RED: &str = "reduction#";
 const SAMPLE_OUTPUT_ACC: &str = "accumulations.txt";
 
+const SAMPLE_INPUT_GETQUICK: &str = "quickaccess_testinput";
+const SAMPLE_INPUT_GETHEAVY: &str = "heavyaccess_testinput";
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -414,5 +418,68 @@ mod tests {
         vector2 = Vector2::new(92, -61);
         result = cos_between(&vector1, &vector2);
         assert_eq!(close_enough(result as f32, 0.92, 0.02), true);
+    }
+
+    #[test]
+    fn create_test_db() {
+        let mut database_live: LivingDataUnit = LivingDataUnit::empty();
+
+        let mut dunit_sample: DefinitionUnit = DefinitionUnit::new(5);
+        dunit_sample.id = String::from("The");
+        dunit_sample.feed(0, vec![0, 1, 2, 7]);
+        dunit_sample.feed(1, vec![15, 20]);
+        dunit_sample.feed(2, vec![17, 18, 19, 14, 24]);
+        database_live.definitions.push(dunit_sample.clone());
+
+        dunit_sample = DefinitionUnit::new(5);
+        dunit_sample.id = String::from("De");
+        dunit_sample.feed(0, vec![0, 1, 7, 10, 11]);
+        dunit_sample.feed(1, vec![18, 24, 9, 4]);
+        database_live.definitions.push(dunit_sample.clone());
+
+        dunit_sample = DefinitionUnit::new(5);
+        dunit_sample.id = String::from("Fortress");
+        dunit_sample.feed(0, vec![0, 1, 5]);
+        dunit_sample.feed(1, vec![3, 4, 9]);
+        dunit_sample.feed(2, vec![7, 12]);
+        dunit_sample.feed(3, vec![15, 20, 21]);
+        dunit_sample.feed(4, vec![19, 23, 24]);
+        database_live.definitions.push(dunit_sample.clone());
+
+        dunit_sample = DefinitionUnit::new(5);
+        dunit_sample.id = String::from("Tank");
+        dunit_sample.feed(0, vec![1, 2, 3]);
+        dunit_sample.feed(1, vec![13, 12, 11]);
+        dunit_sample.feed(2, vec![21, 16, 17, 18, 19, 24, 23, 22]);
+        database_live.definitions.push(dunit_sample.clone());
+
+        dunit_sample = DefinitionUnit::new(5);
+        dunit_sample.id = String::from("Meteor");
+        dunit_sample.feed(0, vec![10, 6, 2]);
+        dunit_sample.feed(1, vec![4, 8, 12, 16, 20, 21, 22, 23]);
+        dunit_sample.feed(2, vec![14, 19]);
+        database_live.definitions.push(dunit_sample.clone());
+
+        database_live.dump_to_file(String::from("testdb"));
+    }
+
+    #[test]
+    fn retrieve_from_db() {
+        let mut database_live: LivingDataUnit = LivingDataUnit::empty();
+        let consistent = database_live.load_from_file(String::from(SAMPLE_INPUT_GETQUICK), String::from(SAMPLE_INPUT_GETHEAVY), 5);
+
+        assert_eq!(5, database_live.trace_groups.len());
+        let mut vector_output: &Vector2<i64> = &database_live.trace_groups[2].group_content[2].trace;
+        assert_eq!((vector_output.x, vector_output.y),(1, 0));
+        let mut vector_output: &Vector2<i64> = &database_live.trace_groups[2].group_content[2].average;
+        assert_eq!((vector_output.x, vector_output.y),(1, -1));
+        let mut vector_output: &Vector2<i64> = &database_live.trace_groups[0].group_content[3].average;
+        assert_eq!((vector_output.x, vector_output.y),(1, 0));
+        let mut vector_output: &Vector2<i64> = &database_live.trace_groups[1].group_content[1].trace;
+        assert_eq!((vector_output.x, vector_output.y),(1, -3));
+
+        database_live.dump_to_file(String::from("overwrite"));
+
+        println!("The db has a consistent reading: {}", consistent);
     }
 }

@@ -15,7 +15,7 @@ where
 
 impl<T> Vector2<T> 
 where
-    T: Debug + Copy,
+    T: Debug + Copy + std::cmp::PartialEq,
 {
     /// Create a new vector with the given values
     ///
@@ -24,6 +24,12 @@ where
             x,
             y,
         }
+    }
+
+    /// Check if the vectors have the same content
+    ///
+    pub fn equals(&self, other: &Vector2<T>) -> bool {
+        return self.x == other.x && self.y == other.y;
     }
 }
 
