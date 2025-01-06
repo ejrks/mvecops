@@ -20,6 +20,9 @@ use naudr::bloat::*;
 use beorc::def::DefinitionUnit;
 use beorc::def::TrainingUnit;
 use beorc::database::LivingDataUnit;
+use beorc::medium::Medium;
+use beorc::medium::print_predictions;
+use beorc::def::Trace;
 
 // Remove usage of naudr without qualifying the name, common operations are being used and might
 // overlap user api
@@ -481,5 +484,41 @@ mod tests {
         database_live.dump_to_file(String::from("overwrite"));
 
         println!("The db has a consistent reading: {}", consistent);
+    }
+
+    #[test]
+    fn vector_equality() {
+        let vector1 = Vector2::new(2, 5);
+        let vector2 = Vector2::new(-2, 5);
+        let vector3 = Vector2::new(2, 1);
+        let vector4 = Vector2::new(99, -99);
+        let vector5 = Vector2::new(2, 5);
+
+        assert_eq!(vector1.equals(&vector2), false);
+        assert_eq!(vector2.equals(&vector2), true);
+        assert_eq!(vector3.equals(&vector4), false);
+        assert_eq!(vector5.equals(&vector1), true);
+    }
+
+    #[test]
+    fn medium_predictions_test() {
+        let mut database_live: LivingDataUnit = LivingDataUnit::empty();
+        database_live.load_from_file(String::from(SAMPLE_INPUT_GETQUICK), String::from(SAMPLE_INPUT_GETHEAVY), 5);
+        let mut medium_instance: Medium = Medium::new(database_live);
+        
+        let mut testing_trace: Trace = Trace::new(0, vec![0, 1, 5], 5);
+        medium_instance.feed_trace(testing_trace);
+        let mut partial_results: (Vec<String>, Vec<f64>) = medium_instance.get_list_of_predictions();
+        println!("ITERATION 0 ::: {}", print_predictions(partial_results.0, partial_results.1));
+
+        testing_trace = Trace::new(1, vec![3, 4, 9, 14], 5);
+        medium_instance.feed_trace(testing_trace);
+        partial_results = medium_instance.get_list_of_predictions();
+        println!("ITERATION 1 ::: {}", print_predictions(partial_results.0, partial_results.1));
+
+        testing_trace = Trace::new(2, vec![3, 8, 12, 16], 5);
+        medium_instance.feed_trace(testing_trace);
+        partial_results = medium_instance.get_list_of_predictions();
+        println!("ITERATION 2 ::: {}", print_predictions(partial_results.0, partial_results.1));
     }
 }

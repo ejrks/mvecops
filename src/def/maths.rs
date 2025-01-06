@@ -60,13 +60,29 @@ pub fn sub_vectors(input1: &Vector2<i64>, input2: &Vector2<i64>) -> Vector2<i64>
     }
 }
 
-/// Returns the approximate angle between the two vector
+/// Returns the approximate angle between the two vector.
+///
+/// # Non-mathematical
+///
+/// When any of the vectors is (0,0) you end up dividing by 0 when trying to get their magnitudes,
+/// which would return NaN. As this method is used mainly to check how similar vectors are, a value
+/// of -2 is returned instead (which is impossible, as no value of cosine will ever be bigger than /// 1) or 0 if both vectors happen to be the zero vector, which under the intended use means that
+/// they are "the same" and there is no cosine distance between them.
 ///
 pub fn cos_between(input1: &Vector2<i64>, input2: &Vector2<i64>) -> f64 {
     let x1 = input1.x as f64;
     let x2 = input2.x as f64;
     let y1 = input1.y as f64;
     let y2 = input2.y as f64;
+
+    if (x1 == 0.0 && y1 == 0.0) || (x2 == 0.0 && y2 == 0.0) {
+        if (x1 == 0.0 && y1 == 0.0 && x2 == 0.0 && y2 == 0.0) {
+            return 1.0;
+        }
+        else {
+            return -2.0;
+        }
+    }
 
     let dot_product = x1 * x2 + y1 * y2;
     let magnitude_1 = (x1 * x1 + y1 * y1).sqrt();

@@ -209,7 +209,7 @@ impl TrainingUnit {
         self.training_instances.push(new_instance);
     }
 
-    pub fn train_w_report(&mut self) {
+    pub fn train_w_report(&mut self) -> DefinitionUnit {
         if (self.training_instances.len() == 0) {
             panic!("There are no definition units for training. Cancelled.");
         }
@@ -316,6 +316,8 @@ impl TrainingUnit {
         report += &(String::from("Remember: Objects are not overwriten anywhere. Hang on the output. "));
 
         fs::write(String::from("debug_report_data.txt"), report);
+
+        return new_definition;
     }
 
     fn train_trace_with(base_trace: &Trace, content: &Vec<f64>, vanguard: &Vec<f64>, rearguard: &Vec<f64>) -> Trace {
