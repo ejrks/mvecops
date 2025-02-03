@@ -41,6 +41,15 @@ impl Medium {
         }
     }
 
+    pub fn empty() -> Medium {
+        Medium {
+            data_unit: LivingDataUnit::empty(),
+            last_trace: Trace::empty(),
+            predictions: Vec::new(),
+            current_best: String::from("bbeorrcc"),
+        }
+    }
+
     pub fn reset_search(&mut self) {
         self.last_trace = Trace::empty();
         self.predictions = Vec::new();

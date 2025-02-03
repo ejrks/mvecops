@@ -264,3 +264,39 @@ pub fn array_position_vector_displacement(input_index: usize, row_size: usize, d
     let result = new_position.x + internal_rs * new_position.y;
     return result;
 }
+
+
+// VECTOR 3 replicas
+
+/// A struct to save a simple 3d vector
+///
+#[derive(Copy, Clone)]
+pub struct Vector3<T> 
+where
+    T: Debug,
+{
+    pub x: T,
+    pub y: T,
+    pub z: T,
+}
+
+impl<T> Vector3<T> 
+where
+    T: Debug + Copy + std::cmp::PartialEq,
+{
+    /// Create a new vector with the given values
+    ///
+    pub fn new(x: T, y: T, z: T) -> Vector3<T> {
+        Vector3 {
+            x,
+            y,
+            z,
+        }
+    }
+
+    /// Check if the vectors have the same content
+    ///
+    pub fn equals(&self, other: &Vector3<T>) -> bool {
+        return self.x == other.x && self.y == other.y && self.z == other.z;
+    }
+}

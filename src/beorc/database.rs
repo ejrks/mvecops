@@ -1,4 +1,6 @@
 use std::fs;
+use std::env::current_dir;
+use std::path::Path;
 
 use crate::Vector2;
 
@@ -31,6 +33,7 @@ impl QuickTrace {
     }
 }
 
+#[derive(Clone)]
 pub struct TraceGroup {
     pub group_content: Vec<QuickTrace>
 }
@@ -43,10 +46,26 @@ impl TraceGroup {
     }
 }
 
+#[derive(Clone)]
 pub struct LivingDataUnit {
     pub definitions: Vec<DefinitionUnit>,
 
     pub trace_groups: Vec<TraceGroup>,
+}
+
+pub fn get_path_content() -> String {
+    let mut result: String = String::from("");
+
+    for entry in fs::read_dir(current_dir().expect("Dead path at content")).unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        if path.is_dir() {
+            result += &path.to_string_lossy();
+            result += &(String::from("\n"));
+        }
+    }
+
+    return result;
 }
 
 impl LivingDataUnit {
@@ -61,10 +80,12 @@ impl LivingDataUnit {
         self.definitions = Vec::new();
         self.trace_groups = Vec::new();
 
+        fs::write(String::from("Pinging file"), String::from("Ping"));
+
         let heavy_target_content = fs::read_to_string(heavy_target);
         let quick_target_content = fs::read_to_string(quick_target);
 
-        for content in heavy_target_content.expect("No HeavyDB found or maybe it was empty").lines() {
+        for content in heavy_target_content.expect("Cannot open content").lines() {
             let mut new_definition_unit = DefinitionUnit::new(resolution);
 
             let split_content: Vec<&str> = content.split(".").collect();
@@ -96,6 +117,100 @@ impl LivingDataUnit {
         let mut even_entry: bool = true;
 
         for content in quick_target_content.expect("No QuickDB found or maybe it was empty").lines() {
+            let mut new_trace_group = TraceGroup::empty();
+
+            let collected_entries: Vec<&str> = content.split(".").collect();
+            let mut selected_entry = collected_entries[0];
+
+            current_index = 0;
+            even_entry = true;
+            last_index = collected_entries.len() - 1;
+            let mut new_quick_trace: QuickTrace = QuickTrace::empty();
+
+            while current_index < last_index {
+                selected_entry = collected_entries[current_index];
+                if even_entry {
+                    new_quick_trace = QuickTrace::empty();
+                    new_quick_trace.id = String::from(selected_entry);
+                }
+                else {
+                    let split_traces = selected_entry.split(",");
+                    let split_values: Vec<&str> = split_traces.collect();
+                    let mut index_values: Vec<i64> = Vec::new();
+                    for entry in split_values {
+                        match entry.parse::<i64>() {
+                            Ok(value) => index_values.push(value),
+                            Err(_) => (),
+                        }
+                    }
+                    new_quick_trace.trace = Vector2::new(index_values[0], index_values[1]);
+                    new_quick_trace.average = Vector2::new(index_values[2], index_values[3]);
+                    new_trace_group.group_content.push(new_quick_trace.clone());
+                }
+
+                current_index += 1;
+                even_entry = current_index % 2 == 0;
+            }
+
+            self.trace_groups.push(new_trace_group);
+        }
+
+        for definition_found in &self.definitions {
+            let trace_length = definition_found.traces.len();
+            let mut current_index = 0;
+            while current_index < trace_length {
+                let heavy_trace = &definition_found.traces[current_index];
+                for quick_trace in &self.trace_groups[current_index].group_content {
+                    if quick_trace.id == definition_found.id {
+                        if !quick_trace.trace.equals(&heavy_trace.trace) {
+                            return false;
+                        }
+                        if !quick_trace.average.equals(&heavy_trace.average_offset) {
+                            return false;
+                        }
+                    }
+                }
+                current_index += 1;
+            }
+        }
+
+        return true;
+    }
+
+    pub fn load_from_data(&mut self, quick_target_content: String, heavy_target_content: String, resolution: i64) -> bool {
+
+        for content in heavy_target_content.lines() {
+            let mut new_definition_unit = DefinitionUnit::new(resolution);
+
+            let split_content: Vec<&str> = content.split(".").collect();
+            new_definition_unit.id = (&split_content[0]).to_string();
+            let mut time_stamp = 0;
+            for split_traces in split_content[1].split(";") {
+                let split_values: Vec<&str> = split_traces.split(",").collect();
+                let mut trace_values: Vec<i64> = Vec::new();
+                for entry in split_values {
+                    match entry.parse::<i64>() {
+                        Ok(value) => trace_values.push(value),
+                        Err(_) => (),
+                    }
+                }
+                if trace_values.len() > 0 {
+                    new_definition_unit.feed(time_stamp, trace_values);
+                }
+
+                time_stamp += 1;
+            }
+
+            self.definitions.push(new_definition_unit);
+        }
+
+        let empty_line = String::from("");
+
+        let mut current_index: usize = 0;
+        let mut last_index: usize = 0;
+        let mut even_entry: bool = true;
+
+        for content in quick_target_content.lines() {
             let mut new_trace_group = TraceGroup::empty();
 
             let collected_entries: Vec<&str> = content.split(".").collect();
